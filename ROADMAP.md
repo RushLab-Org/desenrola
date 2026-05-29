@@ -77,11 +77,11 @@ Sem essas trocas, vendas reais vão entrar mas webhook nunca chega no app (cara 
 ### Marco 1 — Setup técnico + Auth + Schema base
 *Meta: 2-3 horas — implementado em 2026-05-29*
 
-- [x] `app/layout.tsx` raiz com metadata + lang pt-BR + `force-dynamic` (Toaster Sonner removido durante debug — readicionar)
+- [x] `app/layout.tsx` raiz com metadata + lang pt-BR + `<Toaster />` do Sonner
 - [x] `app/login/page.tsx` — Client Component com Form do shadcn + react-hook-form + tom adulto da skill
 - [x] `app/login/actions.ts` — Server Action `signInWithEmail` (magic link via `signInWithOtp`)
 - [x] `app/auth/callback/route.ts` — handler que troca code por sessão e redireciona
-- [x] `proxy.ts` raiz (Next 16 renomeou `middleware` pra `proxy`) — refresh sessão + redirect não-autenticados
+- [x] `middleware.ts` raiz — refresh sessão Supabase + redirect não-autenticados
 - [x] `lib/supabase/server.ts` e `lib/supabase/client.ts` (createServerClient com cookies async + createBrowserClient)
 - [x] `lib/auth.ts` com `getUser()` e `requireUser()` server-side
 - [x] `lib/env.ts` com `requireEnv()` fail-fast (skill doppler-helper)
@@ -89,10 +89,10 @@ Sem essas trocas, vendas reais vão entrar mas webhook nunca chega no app (cara 
 - [x] `app/(app)/layout.tsx` — header com email + botão sair (visual placeholder — definir com humano)
 - [x] `app/(app)/page.tsx` — home placeholder com tom dopaminérgico
 - [x] `app/(app)/actions.ts` — Server Action `signOut`
-- [x] `app/global-error.tsx` + `app/not-found.tsx` (workarounds Next 16 — ADR-017)
+- [x] `app/global-error.tsx` + `app/not-found.tsx` — custom error pages (boa prática)
 - [x] Aplicar princípios da skill `produto-dopaminergico` em todas as telas desde já (tom adulto da copy; visual fica pra revisão com humano)
+- [x] **Build verde** (`npm run build` exit 0, 4 routes geradas, middleware 90.2 kB)
 - [ ] **Teste manual end-to-end** (humano): digitar email → receber magic link → entrar logado → ver header com email → clicar "sair" → voltar pra /login. **PRIMEIRO PASSO da próxima sessão.**
-- [ ] **Bloqueador:** resolver bug Next 16 em `next build` antes de deploy (ver SESSAO_ATUAL.md "Bloqueador #1")
 
 ### Marco 2 — CRUD de Crushes + Perfil do Usuário
 *Meta: 2-3 horas*

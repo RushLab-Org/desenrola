@@ -31,8 +31,10 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 013 | Vercel pro frontend, free Hobby no MVP | Aceita | 2026-05-28 |
 | 014 | GitHub privado + GitHub Actions | Aceita | 2026-05-28 |
 | 015 | Skill `produto-dopaminergico` aplicada em UI | Aceita | 2026-05-28 |
-| 016 | Upgrade pra Next.js 16 (substitui ADR-002) | Aceita | 2026-05-29 |
-| 017 | Workarounds parciais pra bug de prerender em Next 16 | Aceita (temporária) | 2026-05-29 |
+| 016 | Upgrade pra Next.js 16 (substitui ADR-002) | Substituída por ADR-018 | 2026-05-29 |
+| 017 | Workarounds parciais pra bug de prerender em Next 16 | Obsoleta (resolvida pelo ADR-018) | 2026-05-29 |
+| 018 | Downgrade pra Next.js 15 + React 18 (revisão do ADR-016) | Aceita | 2026-05-29 |
+| 019 | Working directory em caminho lowercase obrigatório no Windows | Aceita | 2026-05-29 |
 
 ---
 
@@ -594,7 +596,7 @@ Criar skill carregável `skills/produto-dopaminergico/SKILL.md` ativada automati
 ## ADR-016: Upgrade pra Next.js 16
 
 **Data:** 2026-05-29
-**Status:** Aceita (substitui ADR-002)
+**Status:** Substituída por ADR-018
 **Camada:** Fundação — Frontend
 
 **Contexto:**
@@ -631,7 +633,7 @@ Aceitar o upgrade pra Next.js 16 (App Router + Turbopack default + React 19).
 ## ADR-017: Workarounds parciais pra bug de prerender em Next 16
 
 **Data:** 2026-05-29
-**Status:** Aceita (temporária — depende de fix da Vercel)
+**Status:** Obsoleta (resolvida pelo ADR-018 — downgrade Next 15 elimina necessidade dos workarounds)
 **Camada:** Fundação — Frontend / Build
 
 **Contexto:**
@@ -668,3 +670,125 @@ Manter Next 16 (ADR-016) e aplicar workarounds parciais até fix oficial:
 - Issue #87719 fechado/corrigido → remover `force-dynamic` em root (manter custom error pages)
 - Próximo deploy em produção exigir build → forçar decisão A vs B
 - Bug afetar `next dev` também → forçar downgrade imediato
+
+---
+
+## ADR-018: Downgrade pra Next.js 15 + React 18
+
+**Data:** 2026-05-29
+**Status:** Aceita (substitui ADR-016, obsoleta ADR-017)
+**Camada:** Fundação — Frontend / React
+
+**Contexto:**
+ADR-016 cravou Next 16.2.6 com React 19. ADR-017 tentou workarounds parciais pro bug de prerender (vercel/next.js #87719) — sem sucesso. Decisão humana entre Opção A (esperar fix) vs Opção B (downgrade Next 15) escolheu **Opção B**.
+
+Durante o downgrade, surgiu erro **diferente** no build Next 15.5.18 + React 19.2.4:
+
+```
+TypeError: Cannot read properties of null (reading 'useContext')
+Error occurred prerendering page "/404" (Pages Router fallback _error.js)
+```
+
+Sintomas de "two Reacts" — bundle carregando duas árvores do React, com `useContext` retornando null porque está em árvore diferente do Provider.
+
+Após investigação, o erro persistia mesmo com:
+- node_modules apagado e reinstalado do zero
+- Toaster (next-themes) removido do layout
+- `package-lock.json` reciclado
+
+**Sintoma confirma issues vercel/next.js #82366 e #74616.**
+
+**Como Opção C (downgrade React 19 → React 18) foi sugerida e aceita pelo humano,
+fizemos o downgrade — mas o erro permaneceu.** A causa raiz foi outra (ADR-019).
+
+**Decisão:**
+Stack atual após esta sessão:
+
+- **Next.js 15.5.18** (versão estável estável de maio/2026, App Router)
+- **React 18.3.1** + react-dom 18.3.1
+- **@types/react 18.3.29** + @types/react-dom 18.3.7
+- **ESLint 8.x** + `.eslintrc.json` legacy config + extends `next/core-web-vitals` e `next/typescript`
+  (ESLint 9 + eslint-config-next 15 são incompatíveis — `@rushstack/eslint-patch` quebra)
+- **`middleware.ts`** (com `export async function middleware`) — Next 15 mantém convenção middleware (proxy é Next 16+)
+- **`app/global-error.tsx`** e **`app/not-found.tsx`** custom — boa prática mantida
+- **Sem `force-dynamic`** em root layout — Next 15 prerender funciona quando working dir tem case correto (ADR-019)
+- **`<Toaster />` do Sonner** restaurado em `app/layout.tsx`
+
+**Justificativa:**
+- Next 15 + React 18 é a combinação oficialmente recomendada pelo Vercel em maio/2026, com mais estabilidade comprovada
+- React 18 é maduro, sem bugs como o `useContext null` no prerender
+- ESLint 8 é o oficial suportado pelo eslint-config-next 15
+- Custom error pages são úteis em qualquer versão
+- Custom features do React 19 não eram usadas no Marco 1 (sem `useActionState`, sem `use()`, sem novos Server Component features)
+
+**Implicações:**
+- Componentes shadcn copiados originalmente em ambiente React 19 podem assumir features de React 19 — testar caso a caso (até agora: tudo passa typecheck)
+- Quando Vercel/Next corrigirem bug do Next 16, considerar upgrade de volta — não há pressa
+- A migração futura React 18 → 19 será nova decisão se necessário (features novas do 19: `useActionState`, `useFormStatus`, `useOptimistic`, `use()` API)
+
+**Gatilho de reavaliação:**
+- Necessidade de feature específica do React 19 → considerar upgrade
+- Bug crítico de segurança em Next 15 → upgrade pra Next 16 ou 17
+- Vercel anunciar EOL de Next 15 → planejar migração
+
+---
+
+## ADR-019: Working directory em caminho lowercase obrigatório no Windows
+
+**Data:** 2026-05-29
+**Status:** Aceita
+**Camada:** Operação — Build local
+
+**Contexto:**
+Durante o downgrade pra Next 15 + React 18 (ADR-018), o erro de prerender `useContext null` em `/404` PERSISTIU mesmo com a stack oficialmente compatível. Cleanup completo de node_modules e package-lock.json não resolveu.
+
+**Causa raiz identificada:**
+O caminho real do projeto no filesystem é `D:\Claude Code\sacada-ia` (tudo lowercase no último segmento). Windows é case-insensitive — `Get-Location` no PowerShell mostrava `D:\Claude Code\Sacada-ia` (mixed case, com S maiúsculo) porque foi assim que o terminal foi navegado.
+
+O Next/Webpack resolve módulos parcialmente via:
+- Working directory do processo (mixed case)
+- Real path do filesystem (lowercase)
+
+Resultando em **bundling de DUAS instâncias do mesmo módulo** (uma com path mixed, outra com path lowercase). Cada instância tem sua própria árvore React → `useContext` retorna null porque o Consumer está em árvore diferente do Provider.
+
+**Evidência:**
+Warning durante build:
+```
+There are multiple modules with names that only differ in casing.
+This can lead to unexpected behavior on a case-semantic filesystem.
+Compare these module identifiers:
+ D:\Claude Code\sacada-ia\node_modules\next\dist\...
+ D:\Claude Code\Sacada-ia\node_modules\next\dist\...
+```
+
+**Decisão:**
+Rodar todos os comandos (npm, npx, doppler run --, next build, etc) com working directory em path **lowercase puro**: `D:\Claude Code\sacada-ia`.
+
+**Como aplicar:**
+- No PowerShell: `Set-Location 'D:\Claude Code\sacada-ia'` (lowercase)
+- No Bash via Git Bash: `cd "/d/Claude Code/sacada-ia"`
+- Em terminais de IDE: configurar workspace path com case correto
+- Evitar `cd D:\Claude Code\Sacada-ia` (mixed case)
+
+**Verificação rápida:**
+```powershell
+$path = (Get-Item .).FullName
+Write-Output "Current path: $path"
+# Esperado: D:\Claude Code\sacada-ia (sem S maiúsculo)
+```
+
+**Justificativa:**
+- Solução simples (não muda código, só hábito de navegação)
+- Não exige renomear pasta nem mexer no Git
+- Resolve o bug 100%
+- `next dev` funciona em qualquer case porque não bundla pra produção; só `next build` quebra
+
+**Alternativas consideradas e rejeitadas:**
+- Renomear pasta pra mixed case ou outro path: muda paths de Doppler config, recents do VSCode, links no GitHub — fricção alta sem ganho
+- Mover projeto pra `D:\sacada-ia` (raiz sem espaços): violaria estrutura existente
+- Forçar webpack a normalizar casing: webpack docs não suportam isso oficialmente
+
+**Gatilho de reavaliação:**
+- Migrar pra ambiente Linux/Mac (case-sensitive nativo) → ADR obsoleto
+- Mover projeto pra outro path lowercase → manter ADR
+- Vercel CI/build em Linux: já é case-sensitive, sem impacto

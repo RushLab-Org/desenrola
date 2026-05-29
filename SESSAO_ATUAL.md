@@ -1,6 +1,6 @@
-# Sessão atual — Sacada IA (atualizado em 2026-05-29 madrugada)
+# Sessão atual — Sacada IA (atualizado em 2026-05-29 tarde)
 
-**Estado:** Setup 100% feito + Marco 1 implementado (auth via magic link). Bloqueador conhecido pra deploy (bug Next 16). **dev local funciona; build prod quebra.**
+**Estado:** Setup 100% + Marco 1 implementado + downgrade pra Next 15 + React 18 (Opção B + C). **Build verde. Pronto pra Marco 2.**
 **Repositório:** `RushLab-Org/Sacada-ia` (GitHub privado)
 **Meta de entrega:** MVP funcional em 12-18h focadas
 
@@ -11,51 +11,49 @@
 | Fase | Estado |
 |---|---|
 | 1. Initial Understanding | ✅ Completa |
-| 2. Design Arquitetural | ✅ Completa — 17 ADRs (002 substituído pelo 016) |
+| 2. Design Arquitetural | ✅ Completa — 19 ADRs (002→016→018 evolução; 017 obsoleta) |
 | 3. Setup Inicial (contas + Doppler + repo + schema) | ✅ Completa |
-| 4. Setup técnico do projeto (Next, shadcn, Prettier, prompts/) | ✅ Completa |
-| 5. Marco 1 — Auth + Schema base | ✅ Código implementado, ⚠️ build bloqueado |
-| 6. Marco 2 — CRUD Crushes + Perfil | ⏸️ Aguardando decisão sobre bloqueador |
+| 4. Setup técnico (Next 15 + React 18 + shadcn + Prettier + prompts/) | ✅ Completa |
+| 5. Marco 1 — Auth + Schema base | ✅ Implementado + build verde |
+| 6. Marco 2 — CRUD Crushes + Perfil | 🚀 Pronto pra iniciar |
 | 7. Marcos 3-6 | ⏳ Pendentes |
 
 ---
 
-## ⚠️ BLOQUEADOR CRÍTICO — decidir na próxima sessão
+## ⚠️ Atenção operacional — Working directory case-sensitive (ADR-019)
 
-**Bug do Next.js 16.2.6 quebra `next build`** (issue oficial vercel/next.js #87719, aberto, sem fix).
+**Sempre navegar pra `D:\Claude Code\sacada-ia` (lowercase no último segmento) antes de rodar `npm run build`.**
 
-Erro: `Invariant: Expected workStore to be initialized. This is a bug in Next.js.` Bug ao prerender pages internas `/_global-error` e `/_not-found` que sequer existem na aplicação.
+Windows é case-insensitive mas Next/Webpack resolve módulos parcialmente via working dir e parcialmente via real FS path. Se working dir for `D:\Claude Code\Sacada-ia` (mixed case), bundle carrega 2 árvores React → `useContext null` em prerender de `/404`. Detalhes em ADR-019.
 
-**O que FOI tentado nesta sessão (sem sucesso):**
-1. Renomear `middleware.ts` → `proxy.ts` (Next 16 deprecou middleware) — feito, correto, mas não resolve bug
-2. Criar `app/global-error.tsx` customizado (Client Component) — feito, mas Next ignora
-3. Criar `app/not-found.tsx` customizado — feito, mas Next ignora
-4. `export const dynamic = 'force-dynamic'` em `app/layout.tsx` raiz — feito, não vence bug interno
-5. Ajustar matcher do `proxy.ts` excluindo `_not-found|_global-error` — feito, não resolve
+```powershell
+# Conferir antes de build:
+(Get-Item .).FullName
+# Deve mostrar: D:\Claude Code\sacada-ia
+```
 
-**O que FUNCIONA:**
-- ✅ `npx tsc --noEmit` passa (exit 0)
-- ✅ `npm run lint` passa (exit 0)
-- ✅ `npm run dev` (não testado neste turno mas Marco 1 foi escrito com Server Components + Server Actions padrão, deve funcionar normal)
+## ⚠️ Convenção de build (sessão 2026-05-29)
 
-**O que NÃO funciona:**
-- ❌ `doppler run -- npm run build` falha em prerender de `/_global-error`
-
-**DECISÃO PENDENTE PRA HUMANO (2 opções):**
-
-- **Opção A — Aguardar fix oficial.** Acompanhar issue vercel/next.js #87719. Deploy bloqueado até lá. OK pra fase atual de dev local, mas inviável quando precisar subir Vercel pra rodar webhook real da Perfect Pay. Risco: sem ETA do fix.
-- **Opção B — Downgrade pra Next.js 15** (versão original do ADR-002). Reverte ADR-016. Workarounds adicionados (proxy.ts renomear, custom error pages, force-dynamic) precisam ser revertidos parcialmente — `middleware.ts` volta. Estimativa: 15-30min de trabalho de downgrade. Sem outras consequências conhecidas.
-
-Detalhes técnicos completos em `DECISIONS.md` ADR-016 + ADR-017.
+**Não rodar `doppler run -- npm run build`.** Doppler intercepta stdio do PS de forma que warnings do Next viram ErrorRecord. Pra build:
+- `npm run dev` com Doppler: OK (dev funciona normal)
+- `npm run build`: injetar env vars manualmente via `doppler secrets get`, depois rodar `npm run build` puro
 
 ---
 
-## Outras pendências pra discutir amanhã
+## Bloqueadores anteriores RESOLVIDOS nesta sessão
 
-1. **Design da tela de login** + layout `(app)` + home — vão ser revisados/refeitos visualmente com humano. Estrutura funcional pronta, sem cor/spacing/branding.
-2. **Design global-error.tsx e not-found.tsx** — placeholders mínimos, refazer com cara da marca.
-3. **`prettier --write`** em 15+ arquivos detectados como fora de formato (CLAUDE.md, ROADMAP.md, DECISIONS.md, etc) — agente não rodou pra não reformatar manuais sem autorização.
-4. **Schema do Supabase ainda diz `v_limit INTEGER := 200`** — pendente migration pra 50 quando ADR formal for criado (autorização explícita pendente; só item TODO no ROADMAP).
+- ~~Bug Next 16.2.6 prerender `/_global-error`~~ → resolvido por ADR-018 (downgrade Next 15)
+- ~~Erro `useContext null` em Next 15 + React 19~~ → resolvido pelo ADR-019 (path lowercase) — descobrimos durante o downgrade que o real causador era casing, não a versão do React. React 18 foi mantido por estabilidade adicional.
+- ~~ESLint 9 incompatível com eslint-config-next 15~~ → resolvido downgrading pra ESLint 8 + `.eslintrc.json` legacy
+
+---
+
+## Pendências pra próximas sessões
+
+1. **Teste manual end-to-end do magic link** — primeiro passo da próxima sessão. Cara digita email, recebe link, clica, entra logado.
+2. **Design das 5 telas do Marco 1** (login, layout `(app)`, home, global-error, not-found) — humano participa.
+3. **`prettier --write`** em 15+ arquivos com formatação desalinhada (CLAUDE.md, ROADMAP.md, etc).
+4. **Schema do Supabase ainda diz `v_limit INTEGER := 200`** — migration pra 50 quando ADR for criado (autorização explícita pendente).
 5. **2 vulnerabilidades moderadas** no `npm audit` — não corrigidas (`audit fix --force` é destrutivo).
 
 ---
@@ -74,7 +72,9 @@ Detalhes técnicos completos em `DECISIONS.md` ADR-016 + ADR-017.
 - **Domínio:** ainda NÃO comprado (não bloqueia desenvolvimento)
 
 ### Setup técnico do projeto (sessão 2026-05-29)
-- **Next.js 16.2.6** bootstrapado via create-next-app, App Router, sem `src/`, Tailwind v4, ESLint 9, React 19 (ADR-016 substituindo ADR-002)
+- **Next.js 15.5.18** (downgrade do 16.2.6 — ADR-018), App Router, sem `src/`, Tailwind v4
+- **React 18.3.1** + react-dom 18.3.1 (downgrade do React 19 — ADR-018)
+- **ESLint 8.x** + `.eslintrc.json` legacy config + extends `next/core-web-vitals` e `next/typescript`
 - **Deps core instaladas:** `@supabase/ssr`, `@supabase/supabase-js`, `@google/generative-ai`, `react-hook-form`, `@hookform/resolvers`, `zod`, `lucide-react`
 - **shadcn/ui** inicializado (preset `base-nova`, base color neutral), 13 componentes em `components/ui/`: button, card, dialog, badge, input, label, select, skeleton, slider, sonner (substitui toast deprecado), tabs, textarea, form (este último puxado do preset `new-york` porque `base-nova` não tem form)
 - **Prettier 3 + prettier-plugin-tailwindcss** configurados (`.prettierrc.json` + `.prettierignore`)
@@ -89,17 +89,23 @@ Arquivos criados:
 - `lib/supabase/server.ts` — `createServerClient` com cookies async (Server Components/Actions)
 - `lib/auth.ts` — `getUser()` e `requireUser()` (redirect pra `/login`)
 - `lib/schemas/login.ts` — schema zod `{ email }`
-- `proxy.ts` (raiz) — proxy Next 16 que faz refresh de sessão Supabase + redirect de não-autenticados
+- `middleware.ts` (raiz) — refresh de sessão Supabase + redirect de não-autenticados
 - `app/login/page.tsx` — Client Component com react-hook-form + Form do shadcn + tom adulto
 - `app/login/actions.ts` — Server Action `signInWithEmail` (magic link via `supabase.auth.signInWithOtp` + `emailRedirectTo`)
 - `app/auth/callback/route.ts` — handler que troca code por sessão e redireciona
 - `app/(app)/layout.tsx` — layout autenticado com header + email do user + botão sair
 - `app/(app)/page.tsx` — home placeholder dopaminérgica
 - `app/(app)/actions.ts` — Server Action `signOut`
-- `app/global-error.tsx` — placeholder Client Component (workaround Next 16)
-- `app/not-found.tsx` — placeholder Server Component (workaround Next 16)
-- `app/layout.tsx` — atualizado: metadata real, lang="pt-BR", `force-dynamic` (workaround Next 16). **Toaster do Sonner removido temporariamente** durante debug — precisa ser readicionado quando bloqueador resolver.
+- `app/global-error.tsx` — placeholder custom (boa prática mantida)
+- `app/not-found.tsx` — placeholder custom (boa prática mantida)
+- `app/layout.tsx` — metadata, lang="pt-BR", `<Toaster />` do Sonner ativo
 - `app/page.tsx` raiz — **deletado** (rota `/` agora é `app/(app)/page.tsx`)
+
+**Validação:**
+- ✅ `npx tsc --noEmit` exit 0
+- ✅ `npm run lint` exit 0
+- ✅ `npm run build` exit 0 (do path lowercase, sem doppler) — 4 routes geradas (`/`, `/_not-found`, `/auth/callback`, `/login`), middleware 90.2 kB
+- ⏳ Teste manual end-to-end pendente (humano)
 
 ### Variáveis no Doppler (`sacada-ia` / `dev`)
 - ✅ `NEXT_PUBLIC_SUPABASE_URL`
@@ -188,11 +194,10 @@ Detalhes completos em `DECISIONS.md`.
 
 ## Decisões PENDENTES (resumo)
 
-1. **Bloqueador #1:** Opção A (esperar fix Next #87719) vs Opção B (downgrade pra Next 15) — ver seção bloqueador acima
-2. **ADR-018 sobre redução do limite 200→50 gerações/dia** — autorização pendente do humano pra formalizar (atualmente só TODO no ROADMAP linha "Ajuste de margem pré-tráfego pago")
-3. **Visual de todas as telas do Marco 1** — humano quer participar das decisões de design
+1. **ADR sobre redução do limite 200→50 gerações/dia** — autorização pendente do humano pra formalizar (atualmente só TODO no ROADMAP linha "Ajuste de margem pré-tráfego pago")
+2. **Visual de todas as telas do Marco 1** — humano quer participar das decisões de design
 
-Setup operacional: 100% completo.
+Setup operacional: 100% completo. Build verde.
 
 ---
 
@@ -207,16 +212,11 @@ Setup operacional: 100% completo.
 
 ---
 
-## Próximo passo recomendado (pra próxima sessão)
+## Próximo passo recomendado
 
-**Ordem proposta:**
-
-1. **Decidir bloqueador #1** (Opção A esperar fix vs Opção B downgrade Next 15) — 5min de decisão
-2. **Se Opção B:** rodar downgrade (`npm i next@15 eslint-config-next@15`), reverter `proxy.ts` → `middleware.ts`, remover `force-dynamic` do layout root, rodar build pra confirmar — ~20min
-3. **Testar magic link end-to-end** (humano com email real) — primeiro teste manual pendente do Marco 1
-4. **Refazer design das telas do Marco 1** (login, layout (app), home, global-error, not-found) com humano — tempo livre
-5. **Readicionar `<Toaster />` em `app/layout.tsx`** (foi removido durante debug do bloqueador)
-6. **Marco 2** — CRUD crushes + perfil — 2-3h
+1. **Testar magic link end-to-end** com humano (digitar email → receber link → entrar) — primeiro teste manual do Marco 1
+2. **Discutir e refazer design** das 5 telas do Marco 1 — com humano participando
+3. **Marco 2** — CRUD crushes + perfil — 2-3h
 
 **Sequência dos marcos restantes:**
 2. Marco 2 (CRUD de crushes + Perfil do usuário) — 2-3h
