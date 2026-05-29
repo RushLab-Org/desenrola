@@ -31,7 +31,26 @@ const safetySettings = [
   },
 ];
 
-function getModel() {
+// Temperatura escala por intensidade — mais ousadia em registros sexuais.
+// Range Gemini é 0-2. Acima de 1.1 risco maior de JSON malformado.
+function temperatureFor(intensity: number): number {
+  switch (intensity) {
+    case 1:
+      return 0.8;
+    case 2:
+      return 0.9;
+    case 3:
+      return 0.95;
+    case 4:
+      return 1.0;
+    case 5:
+      return 1.05;
+    default:
+      return 0.9;
+  }
+}
+
+function getModel(intensity: number) {
   const genAI = new GoogleGenerativeAI(requireEnv('GEMINI_API_KEY'));
   return genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
@@ -39,9 +58,48 @@ function getModel() {
     safetySettings,
     generationConfig: {
       responseMimeType: 'application/json',
-      temperature: 0.9,
+      temperature: temperatureFor(intensity),
     },
   });
+}
+
+// Boost contextual: instrução extra anexada ao prompt do usuário pra reforçar
+// a calibração que o system prompt já define (PARTE IV — Intensidade).
+// Útil porque Gemini tem viés default pra polidez mesmo com BLOCK_NONE.
+function intensityBoost(intensity: number, intent: string): string {
+  if (intensity <= 2) return '';
+
+  if (intensity === 3) {
+    return `
+NOTA DE CALIBRAÇÃO (intensidade 3 - quente):
+- Flerte claro com double meaning ambíguo. Tensão sexual saudável.
+- Humor mais cúmplice, menos amenizador. Não fechar opções com "kkk" só pra escapar da tensão.`;
+  }
+
+  if (intensity === 4) {
+    const intentLine =
+      intent === 'esquentar'
+        ? '\n- Intenção "esquentar" + intensidade 4: vai DIRETO no peso sexual. Humor adulto como tempero ocasional, nunca como base.'
+        : '';
+    return `
+NOTA DE CALIBRAÇÃO (intensidade 4 - provocante / safadeza zelada):
+- AMBOS sabem que tão falando de putaria, mas sem ser cru. Intenção sexual ÓBVIA pros dois.
+- Humor REDUZIDO. Só de teor sexual velado/óbvio (piada cúmplice adulta, double meaning que ambos pegam).
+- NÃO use "kkk", emoji de risada, ou humor como válvula de escape da tensão sexual.
+- Frases com peso sexual claro mas não cru. Convites/sugestões diretas. Confiança ousada (afirmação, não pergunta).${intentLine}`;
+  }
+
+  if (intensity === 5) {
+    return `
+NOTA DE CALIBRAÇÃO (intensidade 5 - explícito / putaria pouco sutil):
+- Sexual direto, sem rodeio. Humor minimizado — só nota cúmplice rápida, nunca como mediação.
+- Linguagem sexual adulta crua mas não objetificante. Frases que descrevem desejo/ação sexual com peso e cumplicidade.
+- Palavrão OK se o registro coloquial pedir.
+- SEM "kkk", SEM emoji de risada, SEM suavização performática.
+- Confiança ousada: ela tá no jogo, então não cala, não diminui, não pede permissão.`;
+  }
+
+  return '';
 }
 
 export type ProfileForPrompt = {
@@ -98,6 +156,8 @@ function montarPromptUsuario(
     ? `\n- Contexto extra desta situação: ${input.extra_context}`
     : '';
 
+  const boost = intensityBoost(input.intensity, input.intent);
+
   return `PERFIL DO USUÁRIO:
 - Idade: ${idadeLabel}
 - Situação relacional: ${situacaoLabel}${tempoSolteiroLine}
@@ -116,8 +176,8 @@ ${input.her_message}
 """
 
 PARÂMETROS DA RESPOSTA SOLICITADA:
-- Intensidade desejada: ${input.intensity} (1=leve, 2=equilibrado, 3=quente, 4=provocante)
-- Intenção do usuário: ${input.intent}${contextoExtraLine}
+- Intensidade desejada: ${input.intensity} (1=leve, 2=equilibrado, 3=quente, 4=provocante, 5=explícito)
+- Intenção do usuário: ${input.intent}${contextoExtraLine}${boost}
 
 Gere 3 opções de resposta seguindo o JSON estruturado da PARTE VII do seu prompt.`;
 }
@@ -134,7 +194,7 @@ export async function gerarPorTexto(args: {
   profile: ProfileForPrompt;
   crush: CrushForPrompt;
 }): Promise<GeracaoOutput> {
-  const model = getModel();
+  const model = getModel(args.input.intensity);
   const userPrompt = montarPromptUsuario(args.input, args.profile, args.crush);
 
   const result = await model.generateContent(userPrompt);

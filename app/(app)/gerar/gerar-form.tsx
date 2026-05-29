@@ -98,26 +98,29 @@ export function GerarForm({
           <FormField
             control={form.control}
             name="crush_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>pra quem</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {crushes.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const selectedName = crushes.find((c) => c.id === field.value)?.name;
+              return (
+                <FormItem>
+                  <FormLabel>pra quem</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue>{selectedName ?? 'escolhe...'}</SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {crushes.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
 
           <FormField
@@ -146,13 +149,13 @@ export function GerarForm({
                 <FormLabel className="flex items-center justify-between">
                   <span>intensidade</span>
                   <span className="text-muted-foreground text-xs font-normal">
-                    {intensityLabels[field.value as 1 | 2 | 3 | 4]}
+                    {intensityLabels[field.value as 1 | 2 | 3 | 4 | 5]}
                   </span>
                 </FormLabel>
                 <FormControl>
                   <Slider
                     min={1}
-                    max={4}
+                    max={5}
                     step={1}
                     value={[field.value]}
                     onValueChange={(v) => {
@@ -167,6 +170,7 @@ export function GerarForm({
                   <span>equilibrado</span>
                   <span>quente</span>
                   <span>provocante</span>
+                  <span>explícito</span>
                 </div>
                 <FormMessage />
               </FormItem>

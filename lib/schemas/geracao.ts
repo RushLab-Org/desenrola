@@ -20,11 +20,13 @@ export const intentLabels: Record<(typeof intentOptions)[number], string> = {
   outros: 'outros',
 };
 
-export const intensityLabels: Record<1 | 2 | 3 | 4, string> = {
+// ADR-020: 5 etapas em vez de 4. Definições por etapa em system-prompt-v3 PARTE IV.
+export const intensityLabels: Record<1 | 2 | 3 | 4 | 5, string> = {
   1: 'leve',
   2: 'equilibrado',
   3: 'quente',
   4: 'provocante',
+  5: 'explícito',
 };
 
 export const geracaoInputSchema = z.object({
@@ -34,7 +36,7 @@ export const geracaoInputSchema = z.object({
     .trim()
     .min(1, 'cola a mensagem dela')
     .max(5000, 'mensagem muito longa'),
-  intensity: z.number().int().min(1).max(4),
+  intensity: z.number().int().min(1).max(5),
   intent: z.enum(intentOptions),
   extra_context: z.string().trim().max(2000, 'contexto muito longo'),
 });

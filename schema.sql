@@ -115,7 +115,7 @@ CREATE TABLE public.generations (
     CHECK (input_mode IN ('text', 'print', 'audio')),
   her_message TEXT,  -- texto colado OU transcrição extraída de print/áudio
   intensity SMALLINT NOT NULL
-    CHECK (intensity BETWEEN 1 AND 4),
+    CHECK (intensity BETWEEN 1 AND 5),  -- ADR-020: ampliado de 1-4 pra 1-5
   intent TEXT NOT NULL
     CHECK (intent IN ('responder_normal', 'esquentar', 'sair_de_dr', 'pedir_pra_sair', 'reconquistar', 'desconversar', 'outros')),
   extra_context TEXT,

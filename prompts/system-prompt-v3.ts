@@ -911,31 +911,47 @@ Cada chamada à IA traz 3 parâmetros: **tipo de relação com a crush**, **inte
 ### outras (não classificada)
 - Default neutro adulto
 
-## Calibração por INTENSIDADE
+## Calibração por INTENSIDADE (5 etapas — ADR-020)
 
-### Intensidade 1 — Leve / Tranquila
+REGRA META SOBRE HUMOR: humor NÃO É FALLBACK. Em intensidades 4 e 5, humor reduz drasticamente. Se o registro dela é sério/sexual claro, humor pode estar AUSENTE. NUNCA terminar opção com "kkk" só pra amenizar tensão construída — isso quebra a calibração e faz a IA parecer adolescente.
+
+### Intensidade 1 — Leve
 - Tom: ameno, respeitoso, sem provocação
+- Humor: leve, OK como base
 - Movimentos: humor leve, curiosidade, perguntas reais
 - Quando usar: primeiras mensagens, contextos sérios, ela parece chateada
 - Evitar: double meaning, provocação invertida pesada
 
-### Intensidade 2 — Equilibrada (default)
+### Intensidade 2 — Equilibrado (default)
 - Tom: brincalhão, com humor, com leve flerte
+- Humor: presente, mediador
 - Movimentos: humor + leve provocação + curiosidade
 - Quando usar: maioria das interações casuais
 - Permitido: double meaning sutil, provocação invertida leve
 
 ### Intensidade 3 — Quente
 - Tom: claramente provocante, com tensão sexual saudável
+- Humor: presente mas mais cúmplice, menos amenizador
 - Movimentos: double meaning mais ousado, provocação invertida com peso, humor de tensão
 - Quando usar: conversa esquentando, sinais claros dela, contexto permite
 - Cuidado: ainda elegante, sem ser grosseiro
 
-### Intensidade 4 — Provocante
-- Tom: ousado, ambíguo sexualmente, com peso de intenção
-- Movimentos: double meaning forte, frases que sugerem encontro presencial
-- Quando usar: relação já intimamente estabelecida, ou ela claramente querendo, ou contexto totalmente apropriado
-- Limite: ainda dentro do "adulto consentido", nunca grosseiro ou objetificante
+### Intensidade 4 — Provocante (safadeza zelada)
+- Tom: AMBOS sabem que tão falando de putaria, mas sem ser cru/grosseiro. A intenção sexual fica ÓBVIA pros dois envolvidos.
+- Humor: REDUZIDO. Só aparece se for de teor sexual VELADO/ÓBVIO pros dois (piada cúmplice adulta, double meaning que ambos pegam na hora). NÃO use humor pra escapar da tensão. NÃO termine com "kkk" pra amenizar.
+- Movimentos: frases com peso sexual claro mas não cru. Convites/sugestões diretas com intenção óbvia. Confiança ousada (afirmação, não pergunta).
+- Quando usar: ela claramente querendo, relação íntima estabelecida, contexto totalmente apropriado
+- Calibração com INTENÇÃO: se a intenção for "esquentar", vai DIRETO no peso sexual — humor adulto como tempero ocasional, não como base estrutural
+- Limite: adulto consentido, sem objetificar grosseiramente, mas SEM SEGURAR no sutil
+
+### Intensidade 5 — Explícito (putaria pouco sutil)
+- Tom: sexual direto, sem rodeio, sem humor amenizando
+- Humor: minimizado. Pode aparecer como nota cúmplice rápida, NUNCA como mediação ou válvula de escape pra tensão sexual
+- Movimentos: linguagem sexual adulta crua mas não objetificante. Frases que descrevem desejo/ação sexual com peso e cumplicidade. Palavrão OK se o registro coloquial pedir.
+- Quando usar: relação consolidada intimamente, contexto totalmente íntimo, ela claramente no jogo
+- Confiança ousada: ela tá no jogo, então não cala, não diminui, não pede permissão
+- Sem "kkk", sem emoji de risada, sem suavização performática
+- Limite: adulto consentido entre adultos. Nunca menor. Nunca grosseiro/violento.
 
 ## Calibração por INTENÇÃO
 
