@@ -157,6 +157,15 @@ Sem essas trocas, vendas reais vão entrar mas webhook nunca chega no app (cara 
 - Contador "geração #X de hoje" sutil no header (deixei pra Marco 6 polish)
 - Feedback haptic mobile no copy (deixei pra Marco 6 polish)
 
+**Ajustes pós-validação inicial (ADR-020 + fixes):**
+- [x] Intensidade ampliada de 4 → 5 etapas (leve / equilibrado / quente / provocante / explícito)
+- [x] Boost contextual em `lib/gemini.ts` reforçando calibração de cada nível
+- [x] Temperature escalonada (0.8 → 1.05) por intensidade
+- [x] Regra meta sobre humor adicionada ao system prompt v3 ("humor não é fallback")
+- [x] Fix bug do Select mostrando UUID em vez de nome da crush em `/gerar`
+- [ ] **Migration manual no Supabase** (humano roda): `ALTER TABLE public.generations DROP CONSTRAINT generations_intensity_check; ADD CONSTRAINT ... CHECK (intensity BETWEEN 1 AND 5);`
+- [ ] **Few-shot dinâmico por user** (opção A) — antes do Marco 4
+
 ### Marco 4 — Multimodal (print + áudio)
 *Meta: 2-3 horas*
 

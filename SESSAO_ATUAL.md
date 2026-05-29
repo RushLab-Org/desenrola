@@ -197,7 +197,14 @@ Detalhes completos em `DECISIONS.md`.
 ## Decisões PENDENTES (resumo)
 
 1. **ADR sobre redução do limite 200→50 gerações/dia** — autorização pendente do humano pra formalizar (atualmente só TODO no ROADMAP linha "Ajuste de margem pré-tráfego pago")
-2. **Visual de todas as telas do Marco 1** — humano quer participar das decisões de design
+2. **Visual de todas as telas dos Marcos 1, 2 e 3** — humano quer participar via Claude Design
+3. **Migration SQL pra ADR-020 (intensidade 1-5)** — humano precisa rodar no Supabase SQL Editor:
+   ```sql
+   ALTER TABLE public.generations DROP CONSTRAINT generations_intensity_check;
+   ALTER TABLE public.generations ADD CONSTRAINT generations_intensity_check
+     CHECK (intensity BETWEEN 1 AND 5);
+   ```
+   Sem isso, gerações com intensidade 5 vão FALHAR no INSERT.
 
 Setup operacional: 100% completo. Build verde.
 

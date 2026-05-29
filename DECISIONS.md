@@ -35,6 +35,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 017 | Workarounds parciais pra bug de prerender em Next 16 | Obsoleta (resolvida pelo ADR-018) | 2026-05-29 |
 | 018 | Downgrade pra Next.js 15 + React 18 (revisão do ADR-016) | Aceita | 2026-05-29 |
 | 019 | Working directory em caminho lowercase obrigatório no Windows | Aceita | 2026-05-29 |
+| 020 | Intensidade de geração: 4 → 5 etapas + boost contextual + humor calibrado | Aceita | 2026-05-29 |
 
 ---
 
@@ -792,3 +793,77 @@ Write-Output "Current path: $path"
 - Migrar pra ambiente Linux/Mac (case-sensitive nativo) → ADR obsoleto
 - Mover projeto pra outro path lowercase → manter ADR
 - Vercel CI/build em Linux: já é case-sensitive, sem impacto
+
+---
+
+## ADR-020: Intensidade de geração: 4 → 5 etapas + boost contextual + humor calibrado
+
+**Data:** 2026-05-29
+**Status:** Aceita
+**Camada:** Produto — IA / Geração
+
+**Contexto:**
+Marco 3 implementado com 4 níveis de intensidade (1=leve, 2=equilibrado, 3=quente, 4=provocante) conforme system prompt v3 PARTE IV original. Durante teste manual em conversa com convite sexual óbvio ("vinho + frio + casa à noite"), com intenção "esquentar" + intensidade 4 (máxima), as 3 opções saíram em registro 2-3 — humor "kkk" como válvula de escape, double meaning bonzinho, sutil demais pro contexto.
+
+Causa raiz:
+1. **System prompt v3 PARTE IV** descrevia intensidade 4 com "Limite: ainda dentro do 'adulto consentido', nunca grosseiro ou objetificante" — frase puxando IA pra "safe defaults"
+2. **Gemini default** com BLOCK_NONE ainda tem viés calibrado pra polidez — precisa empurrão explícito
+3. **Humor era usado como fallback** mesmo quando registro pedia tensão sexual mantida
+
+ADR-006 já antecipava no gatilho de reavaliação: "Necessidade de intensidade 5 (sexting explícito) → pluga Grok como modelo opcional premium (decisão pós-MVP)". Decisão humana foi formalizar 5ª etapa já no MVP, mantendo Gemini (Grok como upgrade futuro).
+
+**Decisão:**
+
+5 níveis de intensidade com definições calibradas + boost contextual + temperatura escalonada.
+
+**Definições (system prompt v3 PARTE IV atualizada):**
+
+| # | Label | Tom calibrado |
+|---|---|---|
+| 1 | leve | respeitoso, humor leve OK como base |
+| 2 | equilibrado | humor + flerte leve (default) |
+| 3 | quente | flerte claro, double meaning ambíguo, humor cúmplice |
+| 4 | provocante (safadeza zelada) | ambos sabem que é putaria mas sem ser cru. Humor REDUZIDO, só de teor sexual velado/óbvio. Não termina com "kkk". |
+| 5 | explícito (putaria pouco sutil) | sexual direto, sem humor amenizando, palavrão OK, confiança ousada |
+
+**Regra meta sobre humor adicionada ao system prompt:**
+> Humor NÃO É FALLBACK. Em intensidades 4 e 5, humor reduz drasticamente. Se o registro dela é sério/sexual claro, humor pode estar AUSENTE. NUNCA terminar opção com "kkk" só pra amenizar tensão construída.
+
+**Boost contextual em `lib/gemini.ts`:**
+Pra intensidades 3, 4 e 5, instrução EXTRA é anexada ao prompt do usuário reforçando a calibração (porque Gemini default tende a suavizar). Pra intensidade 4 com intenção "esquentar", instrução adicional pra ir direto.
+
+**Temperatura escalonada por intensidade:**
+- 1: 0.8 (mais previsível)
+- 2: 0.9 (atual default)
+- 3: 0.95
+- 4: 1.0
+- 5: 1.05
+
+Mais ousadia em intensidades altas. Acima de 1.1 risco maior de JSON malformado.
+
+**Mudanças implementadas:**
+- `schema.sql`: `CHECK (intensity BETWEEN 1 AND 5)` (requer migration manual no Supabase em prod)
+- `lib/schemas/geracao.ts`: `.max(5)` + label "explícito"
+- `lib/gemini.ts`: funções `intensityBoost()` e `temperatureFor()` + `getModel(intensity)`
+- `prompts/system-prompt-v3.ts` PARTE IV: substituídas 4 definições por 5 + regra meta sobre humor
+- `app/(app)/gerar/gerar-form.tsx`: slider `max={5}`, 5 labels embaixo
+
+**Migration manual necessária (humano roda no Supabase SQL Editor):**
+
+```sql
+ALTER TABLE public.generations DROP CONSTRAINT generations_intensity_check;
+ALTER TABLE public.generations ADD CONSTRAINT generations_intensity_check
+  CHECK (intensity BETWEEN 1 AND 5);
+```
+
+**Justificativa:**
+- Intensidade 4 com "safe limit" não cobria gama de registros sexuais adultos consentidos
+- Humor como fallback era padrão problemático generalizado, não específico de intensidade 4
+- 5 etapas dá granularidade pra distinguir "sexual ambíguo zelado" (4) de "sexting cru" (5)
+- Boost contextual + temperatura escalonada compensam viés default do Gemini sem trocar de modelo
+- Solução não exige troca pro Grok no MVP (ADR-006 mantido)
+
+**Gatilho de reavaliação:**
+- Usuário reportar que intensidade 5 ainda fica suave → considerar Grok como tier premium (ADR-006 gatilho original)
+- Gemini bloquear consistentemente intensidade 5 (`promptFeedback.blockReason`) → mesmo caminho
+- Aprendizado dinâmico (few-shot por user) ativado → reavaliar se boost contextual ainda é necessário
