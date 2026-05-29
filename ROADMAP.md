@@ -95,23 +95,38 @@ Sem essas trocas, vendas reais vão entrar mas webhook nunca chega no app (cara 
 - [ ] **Teste manual end-to-end** (humano): digitar email → receber magic link → entrar logado → ver header com email → clicar "sair" → voltar pra /login. **PRIMEIRO PASSO da próxima sessão.**
 
 ### Marco 2 — CRUD de Crushes + Perfil do Usuário
-*Meta: 2-3 horas*
+*Meta: 2-3 horas — implementado em 2026-05-29*
 
 **Perfil do usuário:**
-- [ ] `app/(app)/perfil/page.tsx` — formulário do perfil do usuário (editável)
-- [ ] Campos: idade (range), estado civil, tempo solteiro (se aplicável), voltando ao mercado (sim/não), tem filhos (sim/não), o que quer melhorar (multi-select), objetivo (single-select)
-- [ ] Server Action `updateUserProfile` validando schema zod
-- [ ] Tela mostra "Sua IA está calibrada" quando perfil completo
+- [x] `app/(app)/perfil/page.tsx` (Server Component) + `perfil-form.tsx` (Client Component)
+- [x] Campos: idade (Select), situação relacional (Select), tempo solteiro (Select, condicional em "recently_single"), voltando ao mercado (Switch), tem filhos (Switch), áreas de melhoria (Checkbox group, 9 opções batendo com PARTE II.6 do system prompt v3), objetivo (Select)
+- [x] Server Action `updateUserProfile` (`app/(app)/perfil/actions.ts`) validando schema zod + marcando `onboarding_completed=true`
+- [x] Toast "IA calibrada" no primeiro save, "perfil atualizado" nos subsequentes
 
 **CRUD de crushes:**
-- [ ] `app/(app)/crushes/page.tsx` — lista de crushes (Server Component + RLS)
-- [ ] Empty state com personalidade ("Ainda não tem ninguém aqui. Vamos adicionar a primeira?")
-- [ ] Botão "Nova crush" abre modal com form (react-hook-form + zod)
-- [ ] Campos: nome, tipo de relação (select: namorada/ficante/conversante/ex/outras), contexto livre (textarea)
-- [ ] Server Action `createCrush`
-- [ ] `app/(app)/crushes/[id]/page.tsx` — detalhes da crush + botão editar/excluir
-- [ ] Server Actions `updateCrush` e `deleteCrush`
-- [ ] Microinteração ao salvar (feedback haptic em mobile + toast visual)
+- [x] `app/(app)/crushes/page.tsx` (Server Component lista, ordenada por `updated_at DESC`)
+- [x] Empty state com personalidade ("tua agenda tá vazia. começa pela que tá te tirando o sono.")
+- [x] `app/(app)/crushes/nova-crush-button.tsx` (Client Component dialog + form react-hook-form + zod)
+- [x] Campos: nome, tipo de relação (select), contexto livre (textarea 5000 chars)
+- [x] Server Action `createCrush` retorna `{ ok, id }` + cliente navega pra `/crushes/[id]`
+- [x] `app/(app)/crushes/[id]/page.tsx` (Server Component detalhes + 404 se não for do user)
+- [x] `app/(app)/crushes/[id]/crush-edit-form.tsx` (Client Component form de edição, botão disabled até dirty)
+- [x] `app/(app)/crushes/[id]/delete-crush-button.tsx` (Client Component dialog de confirmação)
+- [x] Server Actions `updateCrush` (revalida `/crushes` e `/crushes/[id]`) e `deleteCrush` (revalida + redirect pra `/crushes`)
+- [x] Toast visual em todas as mutations (haptic mobile fica pra Marco 6 polish)
+
+**Layout e navegação:**
+- [x] `app/(app)/layout.tsx` atualizado com nav (`/crushes`, `/perfil`)
+- [x] `app/(app)/page.tsx` atualizado com CTAs pras subpáginas + mensagem condicional de onboarding pendente
+
+**Componentes shadcn adicionados nesta etapa:**
+- `checkbox`, `switch`
+
+**Validação:**
+- ✅ `npx tsc --noEmit` exit 0
+- ✅ `npx eslint .` exit 0 (com `.eslintignore` adicionado pra arquivos gerados)
+- ✅ `npm run build` exit 0 — 7 routes geradas (`/`, `/_not-found`, `/auth/callback`, `/crushes`, `/crushes/[id]`, `/login`, `/perfil`)
+- ⏳ Teste manual pendente (humano): preencher perfil, criar crush, editar, excluir
 
 ### Marco 3 — Geração de respostas (modo texto)
 *Meta: 3-4 horas*

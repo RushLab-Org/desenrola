@@ -15,8 +15,9 @@
 | 3. Setup Inicial (contas + Doppler + repo + schema) | ✅ Completa |
 | 4. Setup técnico (Next 15 + React 18 + shadcn + Prettier + prompts/) | ✅ Completa |
 | 5. Marco 1 — Auth + Schema base | ✅ Implementado + build verde |
-| 6. Marco 2 — CRUD Crushes + Perfil | 🚀 Pronto pra iniciar |
-| 7. Marcos 3-6 | ⏳ Pendentes |
+| 6. Marco 2 — CRUD Crushes + Perfil | ✅ Implementado + build verde |
+| 7. Marco 3 — Geração de respostas (texto) | 🚀 Pronto pra iniciar |
+| 8. Marcos 4-6 | ⏳ Pendentes |
 
 ---
 
@@ -214,9 +215,13 @@ Setup operacional: 100% completo. Build verde.
 
 ## Próximo passo recomendado
 
-1. **Testar magic link end-to-end** com humano (digitar email → receber link → entrar) — primeiro teste manual do Marco 1
-2. **Discutir e refazer design** das 5 telas do Marco 1 — com humano participando
-3. **Marco 2** — CRUD crushes + perfil — 2-3h
+1. **Teste manual end-to-end do Marco 2** (humano):
+   - Acessar `/perfil`, preencher todos os campos, salvar (deve aparecer toast "IA calibrada")
+   - Acessar `/crushes`, criar nova crush via dialog
+   - Acessar detalhes da crush, editar contexto, salvar
+   - Excluir crush e confirmar que volta pra `/crushes`
+2. **Design das telas do Marco 1 e 2** com humano via Claude Design (claude.ai/design)
+3. **Marco 3** — Geração de respostas modo texto (Gemini + system prompt v3) — 3-4h
 
 **Sequência dos marcos restantes:**
 2. Marco 2 (CRUD de crushes + Perfil do usuário) — 2-3h

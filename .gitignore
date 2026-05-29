@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Config local do Claude Code (não compartilhar)
 .claude/settings.local.json
+# screenshots locais (não commitar)
+image*.png
+*.local.png
