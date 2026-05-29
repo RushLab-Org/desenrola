@@ -29,7 +29,7 @@ export default async function HomePage() {
         <h1 className="text-3xl font-semibold tracking-tight">tá dentro.</h1>
         <p className="text-muted-foreground mt-2 max-w-prose">
           {onboardingDone
-            ? 'IA calibrada. próxima parada: gerar respostas (em breve).'
+            ? 'IA calibrada. recebeu mensagem dela? gera resposta agora.'
             : 'antes de gerar respostas, calibra a tua voz no perfil.'}
         </p>
       </header>
@@ -45,6 +45,22 @@ export default async function HomePage() {
           <CardContent>
             <Link href="/perfil" className={buttonVariants()}>
               calibrar agora
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {onboardingDone && (
+        <Card className="border-foreground/30">
+          <CardHeader>
+            <CardTitle>gerar resposta</CardTitle>
+            <CardDescription>
+              cola o que ela mandou, escolhe o tom, IA te dá 3 opções calibradas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/gerar" className={buttonVariants()}>
+              começar
             </Link>
           </CardContent>
         </Card>

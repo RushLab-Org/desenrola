@@ -17,6 +17,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
             <nav className="flex items-center gap-4 text-sm">
               <Link
+                href="/gerar"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                gerar
+              </Link>
+              <Link
                 href="/crushes"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
