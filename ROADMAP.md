@@ -36,12 +36,12 @@
 - [ ] Popular config `prd` do Doppler com chaves reais de produção — fazer antes do deploy
 
 ### Inicialização do projeto
-- [ ] `npx create-next-app@latest` com TypeScript, Tailwind, App Router, **sem `src/`**
-- [ ] Instalar dependências: `@supabase/supabase-js`, `@supabase/ssr`, `@google/generative-ai`, `react-hook-form`, `@hookform/resolvers`, `zod`, `lucide-react`
-- [ ] Instalar shadcn/ui CLI + componentes: `button`, `input`, `textarea`, `form`, `card`, `dialog`, `select`, `slider`, `tabs`, `badge`, `toast`, `skeleton`
-- [ ] Configurar `prettier-plugin-tailwindcss`
-- [ ] Estrutura de pastas: `app/`, `components/`, `lib/`, `skills/`, `prompts/`, `prisma/` (opcional, ou usar Supabase SQL direto)
-- [ ] Copiar system prompt v3 pra `prompts/system-prompt-v3.ts` exportado como constante
+- [x] `npx create-next-app@latest` com TypeScript, Tailwind, App Router, **sem `src/`** (rodou em Next 16.2.6 — ver ADR-016)
+- [x] Instalar dependências: `@supabase/supabase-js`, `@supabase/ssr`, `@google/generative-ai`, `react-hook-form`, `@hookform/resolvers`, `zod`, `lucide-react`
+- [x] Instalar shadcn/ui CLI + componentes: `button`, `input`, `textarea`, `form` (puxado do preset `new-york`), `card`, `dialog`, `select`, `slider`, `tabs`, `badge`, `sonner` (substitui `toast` deprecado), `skeleton`, `label` (dep do form)
+- [x] Configurar `prettier` + `prettier-plugin-tailwindcss` (`.prettierrc.json` + `.prettierignore`)
+- [x] Estrutura de pastas: `app/`, `components/ui/`, `lib/supabase/`, `lib/schemas/`, `skills/`, `prompts/`
+- [x] Copiar system prompt v3 pra `prompts/system-prompt-v3.ts` (export const, template literal escapado; .md original deletado)
 
 ### Schema do banco
 - [x] Rodar `schema.sql` no SQL Editor do Supabase
@@ -61,22 +61,38 @@ Três placeholders foram colocados no setup inicial pra destravar o desenvolvime
 
 Sem essas trocas, vendas reais vão entrar mas webhook nunca chega no app (cara paga e não recebe acesso).
 
+### Ajuste de margem pré-tráfego pago
+
+- [ ] **Reduzir limite anti-abuso de 200 → 50 gerações/dia** antes de rodar primeira campanha. Uso legítimo típico é 10-30/dia; 50 cobre com folga, barra abuso bem antes, e salva margem da API Gemini. **Mudança implica:**
+  - Criar **ADR-016** substituindo ADR-011 (registrar motivação: proteção de margem em escala de tráfego pago, não previsto no dimensionamento original)
+  - Alterar `v_limit INTEGER := 200` → `:= 50` no `schema.sql` e rodar migration no Supabase
+  - Atualizar copy da mensagem de limite atingido no Marco 3
+  - Atualizar referência em `skills/doppler-helper/SKILL.md` linha 181
+  - Atualizar `SESSAO_ATUAL.md` (linhas 80 e 106) e índice de ADRs em `DECISIONS.md`
+
 ---
 
 ## Marcos do MVP (ordem rígida)
 
 ### Marco 1 — Setup técnico + Auth + Schema base
-*Meta: 2-3 horas*
+*Meta: 2-3 horas — implementado em 2026-05-29*
 
-- [ ] `app/layout.tsx` raiz com providers (Supabase + tema)
-- [ ] `app/login/page.tsx` — input de email + botão "Enviar link mágico"
-- [ ] `app/auth/callback/route.ts` — handler do callback do magic link
-- [ ] `middleware.ts` — protege rotas autenticadas em `app/(app)/*`
-- [ ] `lib/supabase/server.ts` e `lib/supabase/client.ts` (helpers SSR + client)
-- [ ] `lib/auth.ts` com `getUser()` e `requireUser()` server-side
-- [ ] `app/(app)/layout.tsx` — layout autenticado com header + menu
-- [ ] `app/(app)/page.tsx` — home pós-login (placeholder dopaminérgico)
-- [ ] Aplicar princípios da skill `produto-dopaminergico` em todas as telas desde já (microinterações, velocidade percebida, empty states com personalidade)
+- [x] `app/layout.tsx` raiz com metadata + lang pt-BR + `force-dynamic` (Toaster Sonner removido durante debug — readicionar)
+- [x] `app/login/page.tsx` — Client Component com Form do shadcn + react-hook-form + tom adulto da skill
+- [x] `app/login/actions.ts` — Server Action `signInWithEmail` (magic link via `signInWithOtp`)
+- [x] `app/auth/callback/route.ts` — handler que troca code por sessão e redireciona
+- [x] `proxy.ts` raiz (Next 16 renomeou `middleware` pra `proxy`) — refresh sessão + redirect não-autenticados
+- [x] `lib/supabase/server.ts` e `lib/supabase/client.ts` (createServerClient com cookies async + createBrowserClient)
+- [x] `lib/auth.ts` com `getUser()` e `requireUser()` server-side
+- [x] `lib/env.ts` com `requireEnv()` fail-fast (skill doppler-helper)
+- [x] `lib/schemas/login.ts` (schema zod compartilhado)
+- [x] `app/(app)/layout.tsx` — header com email + botão sair (visual placeholder — definir com humano)
+- [x] `app/(app)/page.tsx` — home placeholder com tom dopaminérgico
+- [x] `app/(app)/actions.ts` — Server Action `signOut`
+- [x] `app/global-error.tsx` + `app/not-found.tsx` (workarounds Next 16 — ADR-017)
+- [x] Aplicar princípios da skill `produto-dopaminergico` em todas as telas desde já (tom adulto da copy; visual fica pra revisão com humano)
+- [ ] **Teste manual end-to-end** (humano): digitar email → receber magic link → entrar logado → ver header com email → clicar "sair" → voltar pra /login. **PRIMEIRO PASSO da próxima sessão.**
+- [ ] **Bloqueador:** resolver bug Next 16 em `next build` antes de deploy (ver SESSAO_ATUAL.md "Bloqueador #1")
 
 ### Marco 2 — CRUD de Crushes + Perfil do Usuário
 *Meta: 2-3 horas*
@@ -190,12 +206,33 @@ Sem essas trocas, vendas reais vão entrar mas webhook nunca chega no app (cara 
 
 ## Pós-MVP (referência — NÃO construir sem validar oferta primeiro)
 
+### Monetização (somente após oferta validada — sinal claro de vendabilidade)
+
+Construir SOMENTE se MVP provar tração comercial:
+- Conversão de tráfego pago consistente ≥1% por pelo menos 2 semanas, OU
+- ≥100 vendas vitalício acumuladas com refund rate <15%
+
+Critério é proteção contra over-engineering em produto que pode não vingar.
+
+- **Order bump no checkout Perfect Pay** — oferta adicional NA tela de pagamento, antes do "Finalizar compra". Aumenta ticket médio sem fricção pós-venda.
+  - Candidato A: **+R$ 27 — "Análise de bio do Instagram dela"** (cara cola URL/print, IA gera leitura completa do perfil dela: tipo de homem que ela atrai, gatilhos, vulnerabilidades, abordagem ideal). Reaproveita stack Gemini já existente.
+  - Candidato B: **+R$ 17 — Guia PDF "As 7 mensagens que sempre funcionam"** (PDF estático com modelos calibrados, entrega imediata via email). Custo marginal zero.
+  - Eleva ticket médio estimado 30-50% sem violar princípio fundador 7 do CLAUDE.md (oferta acontece NO checkout EXTERNO, não dentro do app pós-compra).
+  - Validar com A/B test (50% vê order bump, 50% não) por mínimo 100 vendas antes de cravar.
+  - Implementação: depende de feature de order bump da Perfect Pay (verificar disponibilidade no plano contratado).
+- **Upsell pós-compra** — oferta adicional APÓS pagamento confirmado, antes do magic link. **Só implementar se order bump tiver conversão >20%** (sinal de que público compra adicional).
+  - Candidato: **upgrade pra tier premium recorrente** (R$ 19/mês com features extras: histórico ilimitado por crush, modo voz, análise de Instagram ilimitada).
+  - **NÃO** colocar upsell dentro do app pós-login — viola princípio fundador 7 do CLAUDE.md. Fluxo separado via página intermediária pós-pagamento OU email transacional, NUNCA dentro da experiência principal do app.
+  - Construção: requer infra de recorrência na Perfect Pay (ou migração pra processador adequado tipo Stripe BR).
+
+### Outras evoluções
+
 - **Tracking dentro do app** (PostHog/Mixpanel funil de ativação)
 - **Histórico rolante de conversa por crush** (contexto das últimas 10 trocas)
 - **Feedback loop** ("essa funcionou" → ajuste personalizado por usuário)
 - **App nativo iOS/Android**
 - **Modo voz** (cara fala em vez de digitar)
-- **Análise de Instagram dela** (URL → contexto auto-preenchido)
+- **Análise de Instagram dela** (URL → contexto auto-preenchido) — pode virar parte do order bump A
 - **Bio Tinder/Hinge analyzer**
 - **Conversation Coach** (analisa screenshot da conversa inteira)
 - **Tier premium com Grok** pra intensidade 5 explícita

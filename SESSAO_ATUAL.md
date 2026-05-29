@@ -1,8 +1,8 @@
-# Sessão de Planejamento — Sacada IA (atualizado em 2026-05-29)
+# Sessão atual — Sacada IA (atualizado em 2026-05-29 madrugada)
 
-**Estado:** Setup inicial 100% completo, **zero código de produto escrito** (greenfield) — pronto pra começar Marco 1
+**Estado:** Setup 100% feito + Marco 1 implementado (auth via magic link). Bloqueador conhecido pra deploy (bug Next 16). **dev local funciona; build prod quebra.**
 **Repositório:** `RushLab-Org/Sacada-ia` (GitHub privado)
-**Meta de entrega:** MVP funcional em 12-18h focadas no Claude Code
+**Meta de entrega:** MVP funcional em 12-18h focadas
 
 ---
 
@@ -11,9 +11,52 @@
 | Fase | Estado |
 |---|---|
 | 1. Initial Understanding | ✅ Completa |
-| 2. Design Arquitetural | ✅ Completa — 15 ADRs fechados |
+| 2. Design Arquitetural | ✅ Completa — 17 ADRs (002 substituído pelo 016) |
 | 3. Setup Inicial (contas + Doppler + repo + schema) | ✅ Completa |
-| 4. Implementação (Marcos 1-6) | 🚀 Pronto pra iniciar pelo Marco 1 |
+| 4. Setup técnico do projeto (Next, shadcn, Prettier, prompts/) | ✅ Completa |
+| 5. Marco 1 — Auth + Schema base | ✅ Código implementado, ⚠️ build bloqueado |
+| 6. Marco 2 — CRUD Crushes + Perfil | ⏸️ Aguardando decisão sobre bloqueador |
+| 7. Marcos 3-6 | ⏳ Pendentes |
+
+---
+
+## ⚠️ BLOQUEADOR CRÍTICO — decidir na próxima sessão
+
+**Bug do Next.js 16.2.6 quebra `next build`** (issue oficial vercel/next.js #87719, aberto, sem fix).
+
+Erro: `Invariant: Expected workStore to be initialized. This is a bug in Next.js.` Bug ao prerender pages internas `/_global-error` e `/_not-found` que sequer existem na aplicação.
+
+**O que FOI tentado nesta sessão (sem sucesso):**
+1. Renomear `middleware.ts` → `proxy.ts` (Next 16 deprecou middleware) — feito, correto, mas não resolve bug
+2. Criar `app/global-error.tsx` customizado (Client Component) — feito, mas Next ignora
+3. Criar `app/not-found.tsx` customizado — feito, mas Next ignora
+4. `export const dynamic = 'force-dynamic'` em `app/layout.tsx` raiz — feito, não vence bug interno
+5. Ajustar matcher do `proxy.ts` excluindo `_not-found|_global-error` — feito, não resolve
+
+**O que FUNCIONA:**
+- ✅ `npx tsc --noEmit` passa (exit 0)
+- ✅ `npm run lint` passa (exit 0)
+- ✅ `npm run dev` (não testado neste turno mas Marco 1 foi escrito com Server Components + Server Actions padrão, deve funcionar normal)
+
+**O que NÃO funciona:**
+- ❌ `doppler run -- npm run build` falha em prerender de `/_global-error`
+
+**DECISÃO PENDENTE PRA HUMANO (2 opções):**
+
+- **Opção A — Aguardar fix oficial.** Acompanhar issue vercel/next.js #87719. Deploy bloqueado até lá. OK pra fase atual de dev local, mas inviável quando precisar subir Vercel pra rodar webhook real da Perfect Pay. Risco: sem ETA do fix.
+- **Opção B — Downgrade pra Next.js 15** (versão original do ADR-002). Reverte ADR-016. Workarounds adicionados (proxy.ts renomear, custom error pages, force-dynamic) precisam ser revertidos parcialmente — `middleware.ts` volta. Estimativa: 15-30min de trabalho de downgrade. Sem outras consequências conhecidas.
+
+Detalhes técnicos completos em `DECISIONS.md` ADR-016 + ADR-017.
+
+---
+
+## Outras pendências pra discutir amanhã
+
+1. **Design da tela de login** + layout `(app)` + home — vão ser revisados/refeitos visualmente com humano. Estrutura funcional pronta, sem cor/spacing/branding.
+2. **Design global-error.tsx e not-found.tsx** — placeholders mínimos, refazer com cara da marca.
+3. **`prettier --write`** em 15+ arquivos detectados como fora de formato (CLAUDE.md, ROADMAP.md, DECISIONS.md, etc) — agente não rodou pra não reformatar manuais sem autorização.
+4. **Schema do Supabase ainda diz `v_limit INTEGER := 200`** — pendente migration pra 50 quando ADR formal for criado (autorização explícita pendente; só item TODO no ROADMAP).
+5. **2 vulnerabilidades moderadas** no `npm audit` — não corrigidas (`audit fix --force` é destrutivo).
 
 ---
 
@@ -25,10 +68,38 @@
 - **Perfect Pay:** produto "Sacada IA — Acesso Vitalício" R$ 47 criado, PIX + Cartão habilitados, garantia 7 dias, "Área de Membros Externa", webhook configurado com URL placeholder via `webhook.site`, Public Token (`PERFECTPAY_WEBHOOK_SECRET`) copiado pro Doppler
 
 ### Repositório e ambiente
-- **GitHub:** repo `RushLab-Org/Sacada-ia` privado, branch `main`, commit inicial com 13 arquivos pushed
+- **GitHub:** repo `RushLab-Org/Sacada-ia` privado, branch `main`, commits da sessão de 2026-05-29 pushed
 - **Doppler:** projeto `sacada-ia`, config `dev` com 7 variáveis, login local feito, `doppler setup` executado
-- **Vercel:** ainda NÃO conectada (fazer depois do Marco 1)
+- **Vercel:** ainda NÃO conectada (fazer quando build resolver — ver bloqueador)
 - **Domínio:** ainda NÃO comprado (não bloqueia desenvolvimento)
+
+### Setup técnico do projeto (sessão 2026-05-29)
+- **Next.js 16.2.6** bootstrapado via create-next-app, App Router, sem `src/`, Tailwind v4, ESLint 9, React 19 (ADR-016 substituindo ADR-002)
+- **Deps core instaladas:** `@supabase/ssr`, `@supabase/supabase-js`, `@google/generative-ai`, `react-hook-form`, `@hookform/resolvers`, `zod`, `lucide-react`
+- **shadcn/ui** inicializado (preset `base-nova`, base color neutral), 13 componentes em `components/ui/`: button, card, dialog, badge, input, label, select, skeleton, slider, sonner (substitui toast deprecado), tabs, textarea, form (este último puxado do preset `new-york` porque `base-nova` não tem form)
+- **Prettier 3 + prettier-plugin-tailwindcss** configurados (`.prettierrc.json` + `.prettierignore`)
+- **Estrutura de pastas:** `app/`, `components/ui/`, `lib/supabase/`, `lib/schemas/`, `prompts/`, `skills/`
+- **system_prompt_v3.md** migrado pra `prompts/system-prompt-v3.ts` (export const SYSTEM_PROMPT_V3, template literal com escapes corretos)
+- **`.md` original deletado** da raiz
+
+### Marco 1 — implementado (sessão 2026-05-29)
+Arquivos criados:
+- `lib/env.ts` — `requireEnv()` fail-fast (skill doppler-helper)
+- `lib/supabase/client.ts` — `createBrowserClient` (Client Components)
+- `lib/supabase/server.ts` — `createServerClient` com cookies async (Server Components/Actions)
+- `lib/auth.ts` — `getUser()` e `requireUser()` (redirect pra `/login`)
+- `lib/schemas/login.ts` — schema zod `{ email }`
+- `proxy.ts` (raiz) — proxy Next 16 que faz refresh de sessão Supabase + redirect de não-autenticados
+- `app/login/page.tsx` — Client Component com react-hook-form + Form do shadcn + tom adulto
+- `app/login/actions.ts` — Server Action `signInWithEmail` (magic link via `supabase.auth.signInWithOtp` + `emailRedirectTo`)
+- `app/auth/callback/route.ts` — handler que troca code por sessão e redireciona
+- `app/(app)/layout.tsx` — layout autenticado com header + email do user + botão sair
+- `app/(app)/page.tsx` — home placeholder dopaminérgica
+- `app/(app)/actions.ts` — Server Action `signOut`
+- `app/global-error.tsx` — placeholder Client Component (workaround Next 16)
+- `app/not-found.tsx` — placeholder Server Component (workaround Next 16)
+- `app/layout.tsx` — atualizado: metadata real, lang="pt-BR", `force-dynamic` (workaround Next 16). **Toaster do Sonner removido temporariamente** durante debug — precisa ser readicionado quando bloqueador resolver.
+- `app/page.tsx` raiz — **deletado** (rota `/` agora é `app/(app)/page.tsx`)
 
 ### Variáveis no Doppler (`sacada-ia` / `dev`)
 - ✅ `NEXT_PUBLIC_SUPABASE_URL`
@@ -115,11 +186,13 @@ Detalhes completos em `DECISIONS.md`.
 
 ---
 
-## Decisões PENDENTES
+## Decisões PENDENTES (resumo)
 
-**Nenhuma decisão arquitetural pendente.** Tudo cravado em DECISIONS.md.
+1. **Bloqueador #1:** Opção A (esperar fix Next #87719) vs Opção B (downgrade pra Next 15) — ver seção bloqueador acima
+2. **ADR-018 sobre redução do limite 200→50 gerações/dia** — autorização pendente do humano pra formalizar (atualmente só TODO no ROADMAP linha "Ajuste de margem pré-tráfego pago")
+3. **Visual de todas as telas do Marco 1** — humano quer participar das decisões de design
 
-**Setup operacional:** 100% completo. Tudo já está pronto pra começar Marco 1.
+Setup operacional: 100% completo.
 
 ---
 
@@ -134,28 +207,25 @@ Detalhes completos em `DECISIONS.md`.
 
 ---
 
-## Próximo passo recomendado
+## Próximo passo recomendado (pra próxima sessão)
 
-**Marco 1 — Setup técnico + Auth + Schema base** (2-3h).
+**Ordem proposta:**
 
-Checklist específico em ROADMAP.md. Resumo:
-- `npx create-next-app@latest` com TypeScript + Tailwind + App Router (sem `src/`)
-- Instalar dependências (Supabase SSR, Gemini SDK, react-hook-form, zod, shadcn)
-- Criar `lib/supabase/server.ts` e `lib/supabase/client.ts`
-- Criar `app/login/page.tsx` com input de email + magic link
-- Criar `app/auth/callback/route.ts`
-- Criar `middleware.ts` protegendo `(app)/*`
-- Criar `lib/auth.ts` com `getUser()` e `requireUser()`
-- Testar fluxo: digitar email → receber magic link → entrar logado
+1. **Decidir bloqueador #1** (Opção A esperar fix vs Opção B downgrade Next 15) — 5min de decisão
+2. **Se Opção B:** rodar downgrade (`npm i next@15 eslint-config-next@15`), reverter `proxy.ts` → `middleware.ts`, remover `force-dynamic` do layout root, rodar build pra confirmar — ~20min
+3. **Testar magic link end-to-end** (humano com email real) — primeiro teste manual pendente do Marco 1
+4. **Refazer design das telas do Marco 1** (login, layout (app), home, global-error, not-found) com humano — tempo livre
+5. **Readicionar `<Toaster />` em `app/layout.tsx`** (foi removido durante debug do bloqueador)
+6. **Marco 2** — CRUD crushes + perfil — 2-3h
 
-**Sequência completa dos marcos seguintes:**
+**Sequência dos marcos restantes:**
 2. Marco 2 (CRUD de crushes + Perfil do usuário) — 2-3h
 3. Marco 3 (Geração de respostas modo texto) — 3-4h
 4. Marco 4 (Multimodal: print + áudio) — 2-3h
 5. Marco 5 (Webhook Perfect Pay + criação automática de conta) — 2-3h
 6. Marco 6 (Onboarding dopaminérgico + Polish) — 2-3h
 
-Total restante: 13-19 horas focadas.
+Total restante (excluindo Marco 1 já implementado): 11-16 horas focadas.
 
 ---
 

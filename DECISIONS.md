@@ -31,6 +31,8 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 013 | Vercel pro frontend, free Hobby no MVP | Aceita | 2026-05-28 |
 | 014 | GitHub privado + GitHub Actions | Aceita | 2026-05-28 |
 | 015 | Skill `produto-dopaminergico` aplicada em UI | Aceita | 2026-05-28 |
+| 016 | Upgrade pra Next.js 16 (substitui ADR-002) | Aceita | 2026-05-29 |
+| 017 | Workarounds parciais pra bug de prerender em Next 16 | Aceita (temporária) | 2026-05-29 |
 
 ---
 
@@ -65,7 +67,7 @@ N/A. Decisão estrutural irreversível na prática.
 ## ADR-002: Next.js 15 + App Router
 
 **Data:** 2026-05-28
-**Status:** Aceita
+**Status:** Substituída por ADR-016
 **Camada:** Fundação — Frontend
 
 **Contexto:**
@@ -586,3 +588,83 @@ Criar skill carregável `skills/produto-dopaminergico/SKILL.md` ativada automati
 - Dados de uso real revelarem que princípio X não funciona → atualizar skill
 - Princípio novo emergir de feedback de usuário → adicionar skill
 - Pivot de produto significativo → reavaliar escopo
+
+---
+
+## ADR-016: Upgrade pra Next.js 16
+
+**Data:** 2026-05-29
+**Status:** Aceita (substitui ADR-002)
+**Camada:** Fundação — Frontend
+
+**Contexto:**
+ADR-002 cravou Next.js 15 + App Router em 2026-05-28. Bootstrap do projeto
+(commit `fd83336` — "Bootstrap Next.js 16 + setup completo") usou Next.js 16.2.6
+em vez de 15. Decisão sobre versão foi tomada implicitamente pelo
+`create-next-app@latest`, que pegou a versão mais recente disponível em maio/2026.
+
+**Decisão:**
+Aceitar o upgrade pra Next.js 16 (App Router + Turbopack default + React 19).
+
+**Justificativa:**
+- create-next-app já bootstrapou em 16; reverter seria trabalho extra sem benefício claro pro MVP
+- Next 16 é o release stable em maio/2026 — não é canary nem RC
+- Diferenças relevantes pro projeto vs Next 15:
+  - `middleware.ts` renomeado pra `proxy.ts` (export `proxy` em vez de `middleware`)
+  - Turbopack como builder default em `next build`
+  - React 19 nativo (mesma coisa que Next 15)
+  - APIs assíncronas mantidas (cookies/headers já eram async em 15)
+- Suporte do `@supabase/ssr` continua compatível (testado nesta sessão)
+
+**Implicações:**
+- Helper de auth via `proxy.ts` em vez de `middleware.ts`
+- Bug aberto vercel/next.js #87719 afeta `next build` em pages internas — ver ADR-017
+- Outras decisões já tomadas (Tailwind v4, shadcn base-nova, Sonner) seguem compatíveis
+
+**Gatilho de reavaliação:**
+- Bug #87719 sem fix em 60 dias → considerar downgrade pra Next.js 15
+- Incompatibilidade grave com lib crítica (Supabase, Gemini, Doppler) → reverter
+- Vercel mudar pricing/modelo de forma incompatível com hobby/pro plan
+
+---
+
+## ADR-017: Workarounds parciais pra bug de prerender em Next 16
+
+**Data:** 2026-05-29
+**Status:** Aceita (temporária — depende de fix da Vercel)
+**Camada:** Fundação — Frontend / Build
+
+**Contexto:**
+Next 16.2.6 tem bug aberto (vercel/next.js #87719, reportado em 2025-12-23 na 16.1.1, persiste em 16.2.6) onde `next build` falha ao prerender pages internas geradas pelo framework (`/_global-error` e `/_not-found`) que sequer existem na aplicação:
+
+```
+Error [InvariantError]: Invariant: Expected workStore to be initialized.
+This is a bug in Next.js.
+Export encountered an error on /_global-error/page: /_global-error, exiting the build.
+```
+
+A mensagem reconhece o bug como interno do Next. Sem fix oficial até 2026-05-29. `next dev` funciona normalmente — só `next build` quebra.
+
+**Decisão:**
+Manter Next 16 (ADR-016) e aplicar workarounds parciais até fix oficial:
+
+1. **Criar `app/global-error.tsx`** customizado (Client Component obrigatório por contrato Next)
+2. **Criar `app/not-found.tsx`** customizado (Server Component)
+3. **`export const dynamic = 'force-dynamic'`** no `app/layout.tsx` raiz (semanticamente correto: app é todo auth-dependent)
+4. **Matcher do `proxy.ts`** excluindo `_not-found|_global-error|_next` pra evitar que o proxy rode em pages internas
+
+**Status atual dos workarounds:** **parciais** — typecheck (`npx tsc --noEmit`) e lint (`npm run lint`) passam. `next build` continua quebrado: o bug é em prerender interno do framework, não respeita config dos parents.
+
+**Próxima ação humana necessária (decisão pendente):**
+- **Opção A:** aceitar esperar fix oficial (acompanhar issue #87719) e bloquear deploy até lá
+- **Opção B:** downgrade pra Next.js 15 conforme ADR-002 original — reverter o upgrade do ADR-016
+
+**Justificativa dos workarounds escolhidos:**
+- `app/global-error.tsx` e `app/not-found.tsx` customizados deveriam sobrescrever as pages auto-geradas pelo Next; bug ignora isso, mas ter os arquivos é boa prática mesmo sem o bug
+- `force-dynamic` em root layout é correção semanticamente correta — app é todo dinâmico (RLS, auth via cookies), prerender estático tem valor zero pro caso de uso
+- Workarounds não introduzem dívida técnica adicional além do bug em si
+
+**Gatilho de reavaliação:**
+- Issue #87719 fechado/corrigido → remover `force-dynamic` em root (manter custom error pages)
+- Próximo deploy em produção exigir build → forçar decisão A vs B
+- Bug afetar `next dev` também → forçar downgrade imediato
