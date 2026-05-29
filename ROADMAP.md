@@ -129,23 +129,33 @@ Sem essas trocas, vendas reais vão entrar mas webhook nunca chega no app (cara 
 - ⏳ Teste manual pendente (humano): preencher perfil, criar crush, editar, excluir
 
 ### Marco 3 — Geração de respostas (modo texto)
-*Meta: 3-4 horas*
+*Meta: 3-4 horas — implementado em 2026-05-29*
 
-- [ ] `app/(app)/gerar/page.tsx` — tela principal de geração
-- [ ] Seleção de crush (autocomplete/select da lista do usuário)
-- [ ] Campo textarea pra colar mensagem dela
-- [ ] **Slider de intensidade (1-4)** com rótulos visuais: 🙂 leve / 😏 equilibrado / 🔥 quente / 🔥🔥 provocante
-- [ ] **Chips de intenção** (single select): Responder normal / Esquentar / Sair de DR / Pedir pra sair / Reconquistar / Desconversar / Outros
-- [ ] Campo opcional "Contexto extra desta situação"
-- [ ] Botão GERAR com **loading dopaminérgico** (mensagens rotativas: "analisando o tom dela...", "aplicando provocação invertida...", "calibrando pela sua voz...")
-- [ ] `lib/gemini.ts` com função `gerarPorTexto(input, perfilUsuario, perfilCrush)` injetando system prompt v3 + perfil do usuário no template
-- [ ] Renderização das 3 opções em cards copiáveis
-- [ ] Botão "copiar" com feedback haptic + visual ("copiado!")
-- [ ] Exibição da `leitura` da conversa acima das opções
-- [ ] **Badges das `skills_aplicadas`** abaixo de cada opção (vira aula gratuita: "esta usa: provocação invertida + double meaning")
-- [ ] Botão "Salvar info nova sobre [nome]" quando `info_nova_detectada !== null` (atualiza contexto da crush)
-- [ ] Contador "Geração #X de hoje" sutil no header
-- [ ] Tratamento de limite de 200 gerações/dia com mensagem clara
+- [x] `app/(app)/gerar/page.tsx` (Server Component carrega crushes + valida onboarding)
+- [x] `app/(app)/gerar/gerar-form.tsx` (Client Component) com Select de crush, Textarea da mensagem, Slider de intensidade (1-4), chips de intenção (single-select), textarea opcional de contexto extra
+- [x] `lib/schemas/geracao.ts` (zod input + output conforme PARTE VII do system prompt v3)
+- [x] `lib/gemini.ts` com Gemini 2.5 Flash + `safety_settings: BLOCK_NONE` nas 4 categorias (ADR-006). `systemInstruction = SYSTEM_PROMPT_V3`, `responseMimeType: "application/json"`, temperature 0.9. Função `gerarPorTexto(input, profile, crush)` monta prompt do usuário com labels em PT-BR pros enums e valida output via zod.
+- [x] `app/(app)/gerar/actions.ts` Server Action `gerarResposta`:
+  - Valida input zod, checa limite via RPC `increment_usage`, carrega profile + crush
+  - Chama Gemini, parseia JSON, persiste em `generations` (input_mode='text')
+  - Atualiza `crush.updated_at` pra subir na lista (sinal de uso recente)
+- [x] `app/(app)/gerar/resultado.tsx` (Client Component): renderiza leitura, 3 opções com botão "copiar" (clipboard API + feedback visual "copiado"), badges das `skills_aplicadas`, alerta se houver, card "info nova detectada" com botão "salvar no perfil dela", botão "essa funcionou?" pra marcar `marked_as_win`
+- [x] Loading dopaminérgico: 7 mensagens rotativas trocando a cada 900ms ("lendo o que ela mandou...", "puxando teu perfil...", "aplicando provocação invertida...", etc)
+- [x] Server Actions adicionais: `adicionarInfoNaCrush(crushId, info)` concatena info nova no contexto da crush, `marcarComoVitoria(generationId, win)` toggle do `marked_as_win`
+- [x] Tratamento de limite atingido com mensagem clara ("limite diário de gerações atingido. volta amanhã.")
+- [x] Tratamento de bloqueio do Gemini (`GeracaoBloqueadaError`) com mensagem amigável
+- [x] Atualizar nav: `/gerar | crushes | perfil`
+- [x] Home com CTA destacado "gerar resposta" quando onboarding completo
+
+**Validação:**
+- ✅ `npx tsc --noEmit` exit 0
+- ✅ `npx eslint .` exit 0
+- ✅ `npm run build` exit 0 — 8 routes (adicionada `/gerar` 14.9 kB)
+- ⏳ Teste manual pendente (humano): gerar resposta real com Gemini, validar JSON output, testar limite, testar "salvar info nova", testar "essa funcionou?"
+
+**Pendências menores (não bloqueantes do Marco 3):**
+- Contador "geração #X de hoje" sutil no header (deixei pra Marco 6 polish)
+- Feedback haptic mobile no copy (deixei pra Marco 6 polish)
 
 ### Marco 4 — Multimodal (print + áudio)
 *Meta: 2-3 horas*

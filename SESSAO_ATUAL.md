@@ -16,8 +16,9 @@
 | 4. Setup técnico (Next 15 + React 18 + shadcn + Prettier + prompts/) | ✅ Completa |
 | 5. Marco 1 — Auth + Schema base | ✅ Implementado + build verde |
 | 6. Marco 2 — CRUD Crushes + Perfil | ✅ Implementado + build verde |
-| 7. Marco 3 — Geração de respostas (texto) | 🚀 Pronto pra iniciar |
-| 8. Marcos 4-6 | ⏳ Pendentes |
+| 7. Marco 3 — Geração de respostas (texto) | ✅ Implementado + build verde |
+| 8. Marco 4 — Multimodal (print + áudio) | 🚀 Pronto pra iniciar |
+| 9. Marcos 5-6 | ⏳ Pendentes |
 
 ---
 
@@ -215,13 +216,14 @@ Setup operacional: 100% completo. Build verde.
 
 ## Próximo passo recomendado
 
-1. **Teste manual end-to-end do Marco 2** (humano):
-   - Acessar `/perfil`, preencher todos os campos, salvar (deve aparecer toast "IA calibrada")
-   - Acessar `/crushes`, criar nova crush via dialog
-   - Acessar detalhes da crush, editar contexto, salvar
-   - Excluir crush e confirmar que volta pra `/crushes`
-2. **Design das telas do Marco 1 e 2** com humano via Claude Design (claude.ai/design)
-3. **Marco 3** — Geração de respostas modo texto (Gemini + system prompt v3) — 3-4h
+1. **Teste manual end-to-end do Marco 3** (humano):
+   - Acessar `/gerar`, escolher crush, colar mensagem dela, escolher intensidade/intenção, gerar
+   - Confirmar que 3 opções aparecem com tom diferente cada
+   - Testar "copiar" em uma opção
+   - Se aparecer info nova detectada, testar "salvar no perfil dela"
+   - Testar "essa funcionou?"
+2. **Design das telas dos Marcos 1, 2 e 3** com humano via Claude Design
+3. **Marco 4** — Multimodal (print + áudio) — 2-3h
 
 **Sequência dos marcos restantes:**
 2. Marco 2 (CRUD de crushes + Perfil do usuário) — 2-3h
