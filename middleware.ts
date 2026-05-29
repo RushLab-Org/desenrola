@@ -15,7 +15,7 @@ function isPublicPath(pathname: string): boolean {
   );
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -63,7 +63,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Excluir todos os internals do Next (que começam com _), assets e o favicon
-    '/((?!_next|_not-found|_global-error|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };
