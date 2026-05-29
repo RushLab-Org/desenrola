@@ -1,0 +1,3 @@
+setup:
+  - project: sacada-ia
+    config: dev
