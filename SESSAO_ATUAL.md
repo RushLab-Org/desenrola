@@ -18,8 +18,10 @@
 | 6. Marco 2 — CRUD Crushes + Perfil | ✅ Implementado + build verde |
 | 7. Marco 3 — Geração de respostas (texto) | ✅ Implementado + build verde |
 | 8. Marco 4 — Multimodal (print + áudio) | ✅ Implementado + build verde |
-| 9. Marco 5 — Webhook Perfect Pay | 🚀 Pronto pra iniciar (depende deploy Vercel) |
-| 10. Marco 6 — Onboarding + Polish | ⏳ Pendente |
+| 9. Marco 5 — Webhook Perfect Pay | ✅ Código implementado + build verde (validação end-to-end pendente deploy) |
+| 10. Few-shot dinâmico por user (opção A, Task #35) | 🚀 Próximo |
+| 11. Deploy Vercel + ativar webhook real | 🚀 Próximo (humano executa parte) |
+| 12. Marco 6 — Onboarding + Polish | ⏳ Pendente |
 
 ---
 
@@ -221,6 +223,11 @@ Detalhes completos em `DECISIONS.md`.
      ADD COLUMN her_message_structured JSONB;
    ```
    Sem isso, gerações modo print/áudio vão falhar no INSERT.
+
+6. **ADR-023 (Marco 5) — sem migration nova, MAS:**
+   - Adicionar `NEXT_PUBLIC_SUPPORT_WHATSAPP` no Doppler (botão de reembolso usa). Atualmente fallback hardcoded `5547999999999` no `reembolso-button.tsx`.
+   - Após deploy Vercel: atualizar URL do webhook na Perfect Pay pra `https://<vercel-url>/api/webhooks/perfectpay` (hoje está em `webhook.site` placeholder).
+   - Adicionar URL de produção em Supabase Auth → Redirect URLs (`https://<vercel-url>/auth/callback`).
 
 Setup operacional: 100% completo. Build verde.
 

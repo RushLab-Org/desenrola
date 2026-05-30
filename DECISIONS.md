@@ -38,6 +38,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 020 | Intensidade de geração: 4 → 5 etapas + boost contextual + humor calibrado | Aceita | 2026-05-29 |
 | 021 | Adicionar `age_range` na crush pra calibrar registro/maturidade da IA | Aceita | 2026-05-30 |
 | 022 | Marco 4 multimodal (print + áudio) com transcrição estruturada persistida | Aceita | 2026-05-30 |
+| 023 | Marco 5 — Webhook Perfect Pay + criação automática de conta + reembolso | Aceita | 2026-05-30 |
 
 ---
 
@@ -994,3 +995,83 @@ Generations existentes ficam com NULL (não quebram, modo texto continua igual).
 - Custo Gemini explodir → considerar extrair transcrição em PRIMEIRA chamada + gerar opções em SEGUNDA (cacheável)
 - MediaRecorder não funcionar consistentemente em iOS Safari → cair pra upload-only ou adicionar polyfill
 - Volume de uploads grande (>1000/dia) → considerar limite de tamanho menor ou compressão client-side antes de enviar
+
+---
+
+## ADR-023: Marco 5 — Webhook Perfect Pay + criação automática de conta + reembolso
+
+**Data:** 2026-05-30
+**Status:** Aceita
+**Camada:** Produto — Pagamento / Auth / Backend
+
+**Contexto:**
+Marco 5 fecha o fluxo comercial do MVP: pagamento Perfect Pay → conta criada automaticamente → magic link enviado → user entra logado. Sem isso, vendas reais NÃO viram acesso. ADR-010 já cravou Perfect Pay via redirect (não checkout transparente).
+
+Decisões implícitas que viraram explícitas neste marco:
+- Idempotência (Perfect Pay reenviar webhook em retransmissão)
+- Onde validar o token (header vs body)
+- Como tratar status não-acionáveis (pending, refused)
+- Fluxo de reembolso dentro do app (botão + WhatsApp pré-formatado)
+
+**Decisão:**
+
+Webhook em `app/api/webhooks/perfectpay/route.ts` com:
+- Validação de token: aceita em header `x-perfectpay-token`/`x-webhook-token` OU body (`token`/`webhook_owner`) — Perfect Pay tem config-dependent
+- Schema zod com `.passthrough()` (campos novos da Perfect Pay não quebram)
+- Switch por `sale_status_enum`:
+  - **APPROVED (2)** → `supabase.auth.admin.createUser` (idempotente: se já existe, busca user; trigger `handle_new_user` no schema cria profile pendente) → UPDATE profile pra `active` + grava `transaction_id` + envia magic link via `signInWithOtp`
+  - **REFUNDED (11) / CHARGEBACK (7)** → UPDATE profile pra `refunded` + grava `refunded_at` (RLS bloqueia acesso já que `has_active_subscription()` retorna false)
+  - **PENDING (1) / REFUSED (3) / outros** → ACK 200 (Perfect Pay para de reenviar) sem mexer no banco
+- Idempotência via `transaction_id` (Perfect Pay `code`): se profile com aquele code já existe e está `active`, retorna 200 sem reprocessar
+- Erros estruturais retornam 4xx/5xx pra Perfect Pay reenviar (token inválido = 401, payload malformado = 400, falha de banco = 500)
+
+Cliente admin separado em `lib/supabase/admin.ts` (service_role key, bypassa RLS). NUNCA importar em código de cliente.
+
+**Telas relacionadas:**
+
+- `app/sucesso/page.tsx` (pública, já no PUBLIC_PATH_PREFIXES do middleware) — mensagem "acesso liberado, verifique email"
+- `app/(app)/configuracoes/page.tsx` (autenticada) — mostra info da conta (status, data compra, método pagamento) + botão **reembolso** + placeholder "excluir conta" (Marco 6)
+- `app/(app)/configuracoes/reembolso-button.tsx` — Client Component: dialog de confirmação → abre WhatsApp pré-formatado (`https://wa.me/{numero}?text=...`) com email da conta + motivo a preencher
+- Nav do `(app)/layout.tsx` ganha link "config"
+
+**Princípio mantido:**
+- Refund processado MANUALMENTE pelo suporte na Perfect Pay (chargeback flow). Quando Perfect Pay confirma refund, webhook recebe status REFUNDED → automaticamente revoga acesso. **Webhook não dispara refund — só REAGE ao status mudado externamente.** Princípio fundador 7 do CLAUDE.md (botão fácil de sair = confiança pra entrar).
+
+**Variável de ambiente nova/usada:**
+- `SUPABASE_SERVICE_ROLE_KEY` (já no Doppler, criada no setup) — usada APENAS em `admin.ts` e `route.ts`
+- `PERFECTPAY_WEBHOOK_SECRET` (já no Doppler) — validação do token
+
+**Pendência: `NEXT_PUBLIC_SUPPORT_WHATSAPP`**
+
+`SUPPORT_WHATSAPP` no Doppler é backend-only. Pra usar no client (botão de reembolso), preciso de prefixo `NEXT_PUBLIC_*`. No MVP atual o botão tem fallback hardcoded `5547999999999` (placeholder). Pré-deploy:
+
+1. Renomear/duplicar `SUPPORT_WHATSAPP` → `NEXT_PUBLIC_SUPPORT_WHATSAPP` no Doppler
+2. Remover hardcoded de `reembolso-button.tsx`
+
+**Justificativa:**
+
+- Schema flexível (`.passthrough`) evita romper se Perfect Pay adicionar campo
+- Idempotência via `transaction_id` é mais simples que tabela de webhook_logs (que serve mais pra debug/auditoria)
+- Aceitar token em header OU body cobre dois modos de config sem refatorar
+- Botão reembolso via WhatsApp pré-formatado em vez de form interno: zero estado, zero email server, suporte humano resolve em paralelo
+- Admin client isolado em arquivo separado = revisão mais fácil de não-vazamento
+
+**Bloqueador pra teste end-to-end:**
+
+Tudo funciona localmente, MAS Perfect Pay só consegue enviar webhook pra URL pública. **Marco 5 só pode ser validado end-to-end depois do deploy Vercel.**
+
+- Tasks pré-validação no humano (deploy Vercel + atualizar URLs):
+  - Conectar Vercel ao repo GitHub
+  - Integração Doppler ↔ Vercel pra env vars
+  - Primeiro deploy
+  - Atualizar `NEXT_PUBLIC_APP_URL` no Doppler com URL real `.vercel.app`
+  - Atualizar Supabase Auth Redirect URLs (adicionar `https://app.vercel.app/auth/callback`)
+  - Atualizar URL do webhook na Perfect Pay (apontar pra `https://app.vercel.app/api/webhooks/perfectpay`)
+  - Adicionar `NEXT_PUBLIC_SUPPORT_WHATSAPP` no Doppler
+
+**Gatilho de reavaliação:**
+
+- Perfect Pay mudar formato do payload de modo que `.passthrough()` não cubra → atualizar schema zod
+- Volume de chargeback alto → adicionar webhook_logs pra auditoria
+- Suporte sobrecarregado por solicitações de reembolso → automatizar refund via API da Perfect Pay (se ela suportar)
+- Fluxo "esqueci minha senha" — não existe porque é magic link, mas se acabar tendo um, integrar ao mesmo fluxo

@@ -180,20 +180,28 @@ Sem essas trocas, vendas reais vão entrar mas webhook nunca chega no app (cara 
 - [ ] Loading dopaminérgico contextual: "transcrevendo áudio dela...", "lendo o print da conversa..."
 
 ### Marco 5 — Webhook Perfect Pay + Criação automática de conta
-*Meta: 2-3 horas*
+*Meta: 2-3 horas — implementado em 2026-05-30 (ADR-023)*
 
-- [ ] `app/api/webhooks/perfectpay/route.ts` recebendo POST do webhook
-- [ ] Validação do `PERFECTPAY_WEBHOOK_SECRET` no header
-- [ ] Parsing do payload: extrair `email`, `transaction_id`, `status`, `payment_method`
-- [ ] **Lógica `status=approved`:**
-  - Criar usuário no Supabase Auth com o email (via admin API)
-  - Criar `profile` com `subscription_status='active'`, `subscription_type='lifetime'`, `purchased_at=now()`, `transaction_id`
-  - Enviar magic link pro email automaticamente
-- [ ] **Lógica `status=refunded`:** marcar `profile.subscription_status='refunded'`, revogar acesso
-- [ ] `app/sucesso/page.tsx` — tela pós-compra com "Acesso liberado, verifique seu email"
-- [ ] **Botão "Solicitar reembolso"** em `app/(app)/configuracoes/page.tsx`
-- [ ] Modal de reembolso: confirmação + abre WhatsApp Business OU email pré-formatado pro suporte
-- [ ] Validar com webhook real da Perfect Pay (modo sandbox primeiro, depois produção)
+- [x] `app/api/webhooks/perfectpay/route.ts` — POST handler com validação de token (header OU body), parsing zod com `.passthrough()`, switch por `sale_status_enum`
+- [x] Idempotência via `transaction_id`: se profile já tem aquele `code` e está `active`, retorna 200 sem reprocessar
+- [x] **Status APPROVED (2):** `supabase.auth.admin.createUser` (idempotente — pega user existente se já tinha) → UPDATE profile pra `active` + `purchased_at` + `transaction_id` + `payment_method` → envia magic link via `signInWithOtp`
+- [x] **Status REFUNDED (11) / CHARGEBACK (7):** UPDATE profile pra `refunded` + `refunded_at`. RLS bloqueia acesso porque `has_active_subscription()` retorna false
+- [x] **Status PENDING/REFUSED/outros:** ACK 200 sem mexer no banco
+- [x] Erros retornam 4xx/5xx pra Perfect Pay reenviar (token inválido = 401, payload malformado = 400, falha de banco = 500)
+- [x] `lib/supabase/admin.ts` — Service Role client isolado (bypassa RLS, NUNCA importar em código de cliente)
+- [x] `lib/schemas/perfectpay.ts` — schema zod flexível + enum SALE_STATUS + helper `mapPaymentMethod`
+- [x] `app/sucesso/page.tsx` — pública, mensagem "acesso liberado, verifique email"
+- [x] `app/(app)/configuracoes/page.tsx` — info da conta (status/data/pagamento) + Card de reembolso + placeholder "excluir conta"
+- [x] `app/(app)/configuracoes/reembolso-button.tsx` — Client Component dialog de confirmação → abre WhatsApp pré-formatado
+- [x] Nav `(app)/layout.tsx` ganha link "config"
+- [ ] **Validar com webhook real da Perfect Pay** — bloqueado por deploy Vercel (precisa URL pública). Hoje webhook URL na Perfect Pay aponta pra `webhook.site` placeholder.
+- [ ] **Adicionar `NEXT_PUBLIC_SUPPORT_WHATSAPP` no Doppler** — botão de reembolso usa. Fallback hardcoded `5547999999999` por enquanto.
+
+**Validação:**
+- ✅ `npx tsc --noEmit` exit 0
+- ✅ `npx eslint .` exit 0
+- ✅ `npm run build` exit 0 — 11 routes (`/api/webhooks/perfectpay`, `/configuracoes`, `/sucesso` adicionados)
+- ⏳ Teste end-to-end com Perfect Pay real depende deploy Vercel
 
 ### Marco 6 — Onboarding dopaminérgico + Polish
 *Meta: 2-3 horas. Esse marco separa MVP que vende de MVP que falha.*
