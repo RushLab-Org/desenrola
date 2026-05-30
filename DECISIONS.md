@@ -36,6 +36,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 018 | Downgrade pra Next.js 15 + React 18 (revisão do ADR-016) | Aceita | 2026-05-29 |
 | 019 | Working directory em caminho lowercase obrigatório no Windows | Aceita | 2026-05-29 |
 | 020 | Intensidade de geração: 4 → 5 etapas + boost contextual + humor calibrado | Aceita | 2026-05-29 |
+| 021 | Adicionar `age_range` na crush pra calibrar registro/maturidade da IA | Aceita | 2026-05-30 |
 
 ---
 
@@ -867,3 +868,58 @@ ALTER TABLE public.generations ADD CONSTRAINT generations_intensity_check
 - Usuário reportar que intensidade 5 ainda fica suave → considerar Grok como tier premium (ADR-006 gatilho original)
 - Gemini bloquear consistentemente intensidade 5 (`promptFeedback.blockReason`) → mesmo caminho
 - Aprendizado dinâmico (few-shot por user) ativado → reavaliar se boost contextual ainda é necessário
+
+---
+
+## ADR-021: Adicionar `age_range` na crush pra calibrar registro/maturidade da IA
+
+**Data:** 2026-05-30
+**Status:** Aceita
+**Camada:** Produto — Schema / IA
+
+**Contexto:**
+Durante calibração manual do system prompt v3 (pós-ADR-020), humano apontou que o **mesmo registro de flerte** funciona ou não dependendo da idade tanto do USER quanto da CRUSH:
+
+- Cara até ~30 falando "tava sumido pra gerar desejo, funcionou?" → flerte charmoso brincalhão
+- Cara 40+ falando mesma coisa pra mulher 38+ → soa adolescente/cringe
+- Mulher madura recebendo registro adolescente → fora de tom
+
+System prompt v3 PARTE II.6 já calibra pela idade do USER (5 ranges), mas o app não capturava idade da CRUSH. A IA só conseguia inferir se o usuário escrevesse no contexto livre ("ela tem 40, separada, com filhos"), o que depende de o usuário lembrar.
+
+**Decisão:**
+Adicionar campo `age_range` na tabela `crushes` (opcional, mesmo enum do profile). Quando preenchido, injetar no prompt do usuário. Quando NULL, pular linha (não inventar idade).
+
+**Mudanças implementadas:**
+- `schema.sql`: nova coluna `age_range TEXT` com CHECK matching ageRangeOptions ou NULL
+- `lib/schemas/crush.ts`: campo `age_range: z.enum(ageRangeOptions).nullable()`, reusando `ageRangeOptions` de `lib/schemas/profile.ts` (DRY)
+- `app/(app)/crushes/nova-crush-button.tsx` e `crush-edit-form.tsx`: Select com 6 opções + "não sei" (sentinel `__unknown__` mapeia pra null)
+- `app/(app)/crushes/actions.ts`: persiste `age_range` em create e update
+- `app/(app)/crushes/[id]/page.tsx`: query inclui `age_range`, passa pro form
+- `app/(app)/gerar/actions.ts`: carrega `age_range` da crush
+- `lib/gemini.ts`: `CrushForPrompt` ganha `age_range`. `montarPromptUsuario` adiciona linha "Idade dela: X" quando preenchido
+
+**Migration manual necessária (humano roda no Supabase SQL Editor):**
+
+```sql
+ALTER TABLE public.crushes
+  ADD COLUMN age_range TEXT
+  CHECK (age_range IN ('18-24', '25-30', '31-38', '39-45', '46-55', '55+') OR age_range IS NULL);
+```
+
+Crushes existentes ficam com `age_range = NULL` (comportamento atual mantido — IA não vai ter info nova nelas até o user editar).
+
+**Justificativa:**
+- Calibrar tom adulto vs jovem é diferencial competitivo importante
+- Custo zero adicional (campo opcional, query SELECT igual, +1 SELECT trivial)
+- Reusa enum do profile (DRY), label e tipos compartilhados
+- Sentinel `__unknown__` em vez de SelectItem com value vazio (base-ui não aceita value vazio)
+- Crushes existentes não quebram (NULL OK)
+
+**Implicações na qualidade da resposta:**
+- IA pode calibrar registro adolescente vs maduro pela idade da CRUSH (não só do user)
+- Combinação USER × CRUSH dá matriz fina: cara 35 com crush 24 = registro diferente de cara 35 com crush 38
+- Quando contexto livre da crush já diz idade ("ela tem 38"), age_range é redundância útil (mais explícito pra IA)
+
+**Gatilho de reavaliação:**
+- Se análise futura mostrar que age_range da crush não move significativamente o output (vs só context livre), considerar tornar inferido por NLP do context
+- Se enum padrão (18-24, 25-30, etc) não bater com perfil real dos usuários, ajustar ranges

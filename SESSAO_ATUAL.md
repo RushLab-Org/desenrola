@@ -206,6 +206,14 @@ Detalhes completos em `DECISIONS.md`.
    ```
    Sem isso, gerações com intensidade 5 vão FALHAR no INSERT.
 
+4. **Migration SQL pra ADR-021 (age_range na crush)** — humano precisa rodar no Supabase SQL Editor:
+   ```sql
+   ALTER TABLE public.crushes
+     ADD COLUMN age_range TEXT
+     CHECK (age_range IN ('18-24', '25-30', '31-38', '39-45', '46-55', '55+') OR age_range IS NULL);
+   ```
+   Sem isso, criar/editar crush com idade vai falhar no INSERT/UPDATE.
+
 Setup operacional: 100% completo. Build verde.
 
 ---
