@@ -122,6 +122,11 @@ CREATE TABLE public.generations (
     CHECK (intent IN ('responder_normal', 'esquentar', 'sair_de_dr', 'pedir_pra_sair', 'reconquistar', 'desconversar', 'outros')),
   extra_context TEXT,
   
+  -- Transcrição estruturada da mídia (ADR-022): NULL pra modo texto;
+  -- pra print = { mensagens, ultima_dela, vibe_geral };
+  -- pra áudio = { transcricao, tom_emocional, pausas_relevantes, risadas, duracao_seg }
+  her_message_structured JSONB,
+
   -- Output (JSON estruturado da resposta da IA)
   ai_reading TEXT,                  -- campo "leitura" do JSON
   ai_options JSONB,                 -- array de 3 opções {estrategia, resposta}

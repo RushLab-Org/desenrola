@@ -13,7 +13,16 @@ import {
   timeSingleLabels,
 } from '@/lib/schemas/profile';
 import { relationshipTypeLabels } from '@/lib/schemas/crush';
-import { geracaoOutputSchema, type GeracaoInput, type GeracaoOutput } from '@/lib/schemas/geracao';
+import {
+  geracaoOutputAudioSchema,
+  geracaoOutputPrintSchema,
+  geracaoOutputSchema,
+  type GeracaoInput,
+  type GeracaoMidiaInput,
+  type GeracaoOutput,
+  type GeracaoOutputAudio,
+  type GeracaoOutputPrint,
+} from '@/lib/schemas/geracao';
 
 // ADR-006: BLOCK_NONE nas 4 categorias = máximo permissivo configurável.
 // Limites residuais (CSAM, menores, instruções pra crime grave) são guardrails
@@ -224,6 +233,203 @@ export async function gerarPorTexto(args: {
   const validated = geracaoOutputSchema.safeParse(parsed);
   if (!validated.success) {
     throw new Error('A IA devolveu JSON fora do schema esperado.');
+  }
+
+  return validated.data;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADR-022 Marco 4 — funções multimodais
+// ─────────────────────────────────────────────────────────────────
+
+function montarPromptBase(
+  input: GeracaoMidiaInput,
+  profile: ProfileForPrompt,
+  crush: CrushForPrompt,
+): string {
+  const idadeLabel = labelOrRaw(profile.age_range, ageRangeLabels);
+  const situacaoLabel = labelOrRaw(profile.marital_status, maritalStatusLabels);
+  const tempoSolteiroLine =
+    profile.marital_status === 'recently_single' && profile.time_single
+      ? `\n- Tempo solteiro: ${labelOrRaw(profile.time_single, timeSingleLabels)}`
+      : '';
+  const areasMelhorar =
+    profile.improvement_areas && profile.improvement_areas.length > 0
+      ? profile.improvement_areas
+          .map((a) => labelOrRaw(a, improvementAreaLabels))
+          .join(', ')
+      : 'não informado';
+  const objetivoLabel = labelOrRaw(profile.primary_goal, primaryGoalLabels);
+  const tipoRelLabel = labelOrRaw(crush.relationship_type, relationshipTypeLabels);
+  const idadeCrushLine = crush.age_range
+    ? `\n- Idade dela: ${labelOrRaw(crush.age_range, ageRangeLabels)}`
+    : '';
+
+  const contextoExtraLine = input.extra_context
+    ? `\n- Contexto extra desta situação: ${input.extra_context}`
+    : '';
+
+  const boost = intensityBoost(input.intensity, input.intent);
+
+  return `PERFIL DO USUÁRIO:
+- Idade: ${idadeLabel}
+- Situação relacional: ${situacaoLabel}${tempoSolteiroLine}
+- Voltando ao mercado: ${yn(profile.returning_to_market)}
+- Tem filhos: ${yn(profile.has_children)}
+- Áreas que quer melhorar: ${areasMelhorar}
+- Objetivo principal: ${objetivoLabel}
+
+PERFIL DA CRUSH (${crush.name}):
+- Tipo de relação: ${tipoRelLabel}${idadeCrushLine}
+- Contexto registrado: ${crush.context?.trim() || '(sem contexto registrado ainda)'}
+
+PARÂMETROS DA RESPOSTA SOLICITADA:
+- Intensidade desejada: ${input.intensity} (1=leve, 2=equilibrado, 3=quente, 4=provocante, 5=explícito)
+- Intenção do usuário: ${input.intent}${contextoExtraLine}${boost}`;
+}
+
+const PROMPT_PRINT_INSTRUCAO = `
+VOU TE ENVIAR UMA IMAGEM DE PRINT DE CONVERSA DE WHATSAPP/MENSAGEM.
+
+Faça DUAS coisas no MESMO JSON output:
+
+1. EXTRAIA conversa estruturada:
+   - Identifique quem enviou cada mensagem (esquerda geralmente é ela, direita é ele, mas CONFIRME pelo contexto)
+   - Liste mensagens em ordem cronológica
+   - Foque nas últimas 10 mensagens
+   - Identifique a ÚLTIMA mensagem dela como ponto de resposta
+   - Capture emojis dela e tom percebido (animada, sedutora, fria, etc)
+   - IGNORE nomes de contatos (privacidade — não inclua nomes próprios)
+   - IGNORE endereços, números de telefone, dados sensíveis
+
+2. GERE 3 opções de resposta CONSIDERANDO TODO O HISTÓRICO VISÍVEL
+
+Output JSON com EXATAMENTE esta estrutura:
+{
+  "transcricao_estruturada": {
+    "mensagens": [
+      {"autor": "ela", "texto": "...", "emojis": ["😂"], "tom": "..."},
+      {"autor": "ele", "texto": "...", "tom": "..."}
+    ],
+    "ultima_dela": "...",
+    "vibe_geral": "..."
+  },
+  "leitura": "...",
+  "opcoes": [
+    {"texto": "...", "tom": "..."},
+    {"texto": "...", "tom": "..."},
+    {"texto": "...", "tom": "..."}
+  ],
+  "skills_aplicadas": ["..."],
+  "info_nova_detectada": null,
+  "alerta": null
+}`;
+
+const PROMPT_AUDIO_INSTRUCAO = `
+VOU TE ENVIAR UM ÁUDIO QUE ELA MANDOU.
+
+Faça TRÊS coisas no MESMO JSON output:
+
+1. TRANSCREVA o áudio (PT-BR, transcrição literal das palavras dela)
+2. ANALISE tom emocional, pausas, hesitações, risadas, duração aproximada
+3. GERE 3 opções de resposta (texto). Se o contexto pedir resposta também em áudio, marque "recomendar_audio_volta": true
+
+Output JSON com EXATAMENTE esta estrutura:
+{
+  "transcricao_estruturada": {
+    "transcricao": "...",
+    "tom_emocional": "animada|triste|sedutora|neutra|irritada|...",
+    "pausas_relevantes": ["[hesitação antes de X]"],
+    "risadas": true,
+    "duracao_seg": 8,
+    "recomendar_audio_volta": false
+  },
+  "leitura": "...",
+  "opcoes": [
+    {"texto": "...", "tom": "..."},
+    {"texto": "...", "tom": "..."},
+    {"texto": "...", "tom": "..."}
+  ],
+  "skills_aplicadas": ["..."],
+  "info_nova_detectada": null,
+  "alerta": null
+}`;
+
+export async function gerarPorPrint(args: {
+  input: GeracaoMidiaInput;
+  profile: ProfileForPrompt;
+  crush: CrushForPrompt;
+  imageBase64: string;
+  mimeType: string;
+}): Promise<GeracaoOutputPrint> {
+  const model = getModel(args.input.intensity);
+  const basePrompt = montarPromptBase(args.input, args.profile, args.crush);
+  const fullPrompt = basePrompt + '\n\n' + PROMPT_PRINT_INSTRUCAO;
+
+  const result = await model.generateContent([
+    { text: fullPrompt },
+    { inlineData: { mimeType: args.mimeType, data: args.imageBase64 } },
+  ]);
+  const response = result.response;
+
+  if (response.promptFeedback?.blockReason) {
+    throw new GeracaoBloqueadaError(
+      `IA recusou: ${response.promptFeedback.blockReason}`,
+    );
+  }
+
+  const text = response.text();
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error('A IA não devolveu JSON válido (modo print).');
+  }
+
+  const validated = geracaoOutputPrintSchema.safeParse(parsed);
+  if (!validated.success) {
+    throw new Error('A IA devolveu JSON fora do schema esperado (modo print).');
+  }
+
+  return validated.data;
+}
+
+export async function gerarPorAudio(args: {
+  input: GeracaoMidiaInput;
+  profile: ProfileForPrompt;
+  crush: CrushForPrompt;
+  audioBase64: string;
+  mimeType: string;
+}): Promise<GeracaoOutputAudio> {
+  const model = getModel(args.input.intensity);
+  const basePrompt = montarPromptBase(args.input, args.profile, args.crush);
+  const fullPrompt = basePrompt + '\n\n' + PROMPT_AUDIO_INSTRUCAO;
+
+  const result = await model.generateContent([
+    { text: fullPrompt },
+    { inlineData: { mimeType: args.mimeType, data: args.audioBase64 } },
+  ]);
+  const response = result.response;
+
+  if (response.promptFeedback?.blockReason) {
+    throw new GeracaoBloqueadaError(
+      `IA recusou: ${response.promptFeedback.blockReason}`,
+    );
+  }
+
+  const text = response.text();
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error('A IA não devolveu JSON válido (modo áudio).');
+  }
+
+  const validated = geracaoOutputAudioSchema.safeParse(parsed);
+  if (!validated.success) {
+    throw new Error('A IA devolveu JSON fora do schema esperado (modo áudio).');
   }
 
   return validated.data;
