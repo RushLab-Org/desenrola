@@ -19,7 +19,7 @@
 | 7. Marco 3 — Geração de respostas (texto) | ✅ Implementado + build verde |
 | 8. Marco 4 — Multimodal (print + áudio) | ✅ Implementado + build verde |
 | 9. Marco 5 — Webhook Perfect Pay | ✅ Código implementado + build verde (validação end-to-end pendente deploy) |
-| 10. Few-shot dinâmico por user (opção A, Task #35) | 🚀 Próximo |
+| 10. Few-shot dinâmico por user (opção A, Task #35) | ✅ Implementado (ADR-024) — beneficia user com vitórias acumuladas |
 | 11. Deploy Vercel + ativar webhook real | 🚀 Próximo (humano executa parte) |
 | 12. Marco 6 — Onboarding + Polish | ⏳ Pendente |
 
