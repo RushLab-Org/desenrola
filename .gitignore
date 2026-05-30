@@ -51,3 +51,5 @@ next-env.d.ts
 # screenshots locais (não commitar)
 image*.png
 *.local.png
+
+.vercel
