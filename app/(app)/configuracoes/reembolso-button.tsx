@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,31 +15,35 @@ import {
 // TODO design: visual do dialog de reembolso (definir com humano)
 export function ReembolsoButton({
   email,
-  whatsappNumber,
+  supportEmail,
 }: {
   email: string;
-  whatsappNumber?: string;
+  supportEmail?: string;
 }) {
   const [open, setOpen] = useState(false);
 
-  // Número do suporte vem via prop ou usa env public como fallback futuro.
-  // No MVP é só placeholder do Doppler (SUPPORT_WHATSAPP). Pra expor no
-  // client precisa promover pra NEXT_PUBLIC_SUPPORT_WHATSAPP — fica
-  // pra fazer junto com o setup de prod.
-  const numero = whatsappNumber ?? process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? '5547999999999';
+  // Email do suporte vem via prop ou via env pública. Se nenhum dos dois
+  // estiver setado, o botão é renderizado mesmo assim mas avisa erro ao clicar.
+  const dest = supportEmail ?? process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? '';
 
   function abrirSuporte() {
-    const mensagem = encodeURIComponent(
-      `Oi, quero solicitar reembolso da Sacada IA.\n\nEmail da conta: ${email}\nMotivo: `,
+    if (!dest) {
+      alert('email de suporte não configurado. fala com o time pelo canal interno.');
+      return;
+    }
+    const assunto = 'Solicitar reembolso — Sacada IA';
+    const corpo = `Email da conta: ${email}\n\nMotivo do reembolso:\n\n`;
+    window.open(
+      `mailto:${dest}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`,
+      '_blank',
     );
-    window.open(`https://wa.me/${numero}?text=${mensagem}`, '_blank');
     setOpen(false);
   }
 
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
-        <MessageCircle className="size-4" />
+        <Mail className="size-4" />
         solicitar reembolso
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -47,9 +51,9 @@ export function ReembolsoButton({
           <DialogHeader>
             <DialogTitle>solicitar reembolso</DialogTitle>
             <DialogDescription>
-              vou abrir o WhatsApp com a mensagem pronta. o suporte processa
-              manualmente na Perfect Pay e tua conta é desativada quando o reembolso
-              cair.
+              vou abrir teu cliente de email com a mensagem pronta pra mandar pro
+              suporte. processamos manualmente na Perfect Pay e tua conta é
+              desativada quando o reembolso cair.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -57,8 +61,8 @@ export function ReembolsoButton({
               cancelar
             </Button>
             <Button onClick={abrirSuporte}>
-              <MessageCircle className="size-4" />
-              abrir WhatsApp
+              <Mail className="size-4" />
+              abrir email
             </Button>
           </DialogFooter>
         </DialogContent>
