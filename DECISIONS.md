@@ -37,6 +37,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 019 | Working directory em caminho lowercase obrigatório no Windows | Aceita | 2026-05-29 |
 | 020 | Intensidade de geração: 4 → 5 etapas + boost contextual + humor calibrado | Aceita | 2026-05-29 |
 | 021 | Adicionar `age_range` na crush pra calibrar registro/maturidade da IA | Aceita | 2026-05-30 |
+| 022 | Marco 4 multimodal (print + áudio) com transcrição estruturada persistida | Aceita | 2026-05-30 |
 
 ---
 
@@ -923,3 +924,73 @@ Crushes existentes ficam com `age_range = NULL` (comportamento atual mantido —
 **Gatilho de reavaliação:**
 - Se análise futura mostrar que age_range da crush não move significativamente o output (vs só context livre), considerar tornar inferido por NLP do context
 - Se enum padrão (18-24, 25-30, etc) não bater com perfil real dos usuários, ajustar ranges
+
+---
+
+## ADR-022: Marco 4 multimodal (print + áudio) com transcrição estruturada persistida
+
+**Data:** 2026-05-30
+**Status:** Aceita
+**Camada:** Produto — IA / Schema / UI
+
+**Contexto:**
+Marco 4 do ROADMAP previa suporte multimodal (print de conversa + áudio dela) reaproveitando a capacidade nativa do Gemini 2.5 Flash (ADR-006). Durante discussão, surgiu ideia adicional do humano: **usar o conteúdo extraído de prints/áudios como material de "aprendizado" pra IA pegar sutilezas do flerte brasileiro**.
+
+Restrição: NÃO armazenar mídia bruta (princípio fundador 6 do agente.md — propriedade dos dados sem inchar storage). Print + áudio têm 100-1000x mais bytes que texto extraído.
+
+**3 opções avaliadas:**
+
+- **A** Marco 4 simples (só extrair texto pra usar na geração, descartar mídia, salvar texto plano em `her_message`)
+- **B** Marco 4 com **transcrição estruturada** persistida (Gemini retorna JSON com mensagens + autores + emojis + tom; áudio retorna transcrição + tom emocional + pausas + risadas)
+- **C** Marco 4 simples agora + estrutura depois quando der vitória
+
+Humano escolheu **B** — evita refatoração futura e prepara base pra few-shot rico depois.
+
+**Decisão:**
+
+Implementar Marco 4 multimodal com **transcrição estruturada** persistida em `generations.her_message_structured JSONB`.
+
+**Stack final:**
+
+- **Coluna nova:** `generations.her_message_structured JSONB` (NULL pra modo texto)
+- **`lib/schemas/geracao.ts`:** 
+  - `transcricaoPrintSchema` (mensagens, ultima_dela, vibe_geral)
+  - `transcricaoAudioSchema` (transcricao, tom_emocional, pausas, risadas, duracao_seg, recomendar_audio_volta)
+  - `geracaoOutputPrintSchema` e `geracaoOutputAudioSchema` (output combinado: geração + transcrição estruturada)
+  - `ALLOWED_IMAGE_MIME` (jpeg/png/webp), `ALLOWED_AUDIO_MIME` (mpeg/mp3/ogg/aac/wav/webm/m4a/mp4)
+  - `MAX_IMAGE_BYTES` = 5 MB, `MAX_AUDIO_BYTES` = 8 MB (~4-5 min voz)
+- **`lib/gemini.ts`:** funções `gerarPorPrint()` e `gerarPorAudio()`. UMA chamada Gemini por modo, retornando JSON único com extração + 3 opções. Multimodal via `{ inlineData: { mimeType, data: base64 } }`.
+- **Server Actions:** `gerarRespostaPrint` e `gerarRespostaAudio` em `app/(app)/gerar/actions.ts`. Validam mimeType + tamanho + chamam helpers compartilhados (`preparaContextoGeracao`).
+- **UI:** Tabs (Texto / Print / Áudio) em `gerar-form.tsx`. 3 componentes: `gerar-text-form.tsx` (renomeado), `gerar-print-form.tsx`, `gerar-audio-form.tsx`. Print: upload de imagem + preview via `<Image>`. Áudio: upload OU gravação via `MediaRecorder API` (Chrome/Edge produz `audio/webm`).
+- **`next.config.ts`:** `experimental.serverActions.bodySizeLimit: '10mb'` (cobre áudio 5min com folga).
+
+**Princípio mantido:**
+- Mídia bruta processada em memória, descartada — NUNCA salva em disco/storage
+- Apenas transcrição estruturada (texto) persistida em JSONB
+- Custo storage por geração: ~2-10 KB (vs ~500-3000 KB se persistisse mídia)
+
+**Migration manual necessária (humano roda no Supabase SQL Editor):**
+
+```sql
+ALTER TABLE public.generations
+  ADD COLUMN her_message_structured JSONB;
+```
+
+Generations existentes ficam com NULL (não quebram, modo texto continua igual).
+
+**Implicações pro aprendizado futuro:**
+
+- Coluna `her_message_structured` está pronta pra ser usada pelo **few-shot dinâmico** (Task #35, próximo passo) — exemplos mais ricos por incluir estilo de escrita dela (emojis, tom)
+- Coletivo Brasil-wide ainda fica como pós-MVP (LGPD pesado)
+
+**Custos:**
+
+- Cada chamada multimodal: 1 round-trip Gemini (input = system prompt + texto + mídia; output = JSON estruturado + 3 opções)
+- Estimativa custo extra vs texto puro: ~+30-50% tokens output (transcrição estruturada adiciona ~300-800 tokens). Continua viável no free tier pra desenvolvimento e nos primeiros mil usuários.
+- Bandwidth upload: limite 10 MB/request — cobre quase qualquer print/áudio realista
+
+**Gatilho de reavaliação:**
+
+- Custo Gemini explodir → considerar extrair transcrição em PRIMEIRA chamada + gerar opções em SEGUNDA (cacheável)
+- MediaRecorder não funcionar consistentemente em iOS Safari → cair pra upload-only ou adicionar polyfill
+- Volume de uploads grande (>1000/dia) → considerar limite de tamanho menor ou compressão client-side antes de enviar

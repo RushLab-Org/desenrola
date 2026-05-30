@@ -17,8 +17,9 @@
 | 5. Marco 1 — Auth + Schema base | ✅ Implementado + build verde |
 | 6. Marco 2 — CRUD Crushes + Perfil | ✅ Implementado + build verde |
 | 7. Marco 3 — Geração de respostas (texto) | ✅ Implementado + build verde |
-| 8. Marco 4 — Multimodal (print + áudio) | 🚀 Pronto pra iniciar |
-| 9. Marcos 5-6 | ⏳ Pendentes |
+| 8. Marco 4 — Multimodal (print + áudio) | ✅ Implementado + build verde |
+| 9. Marco 5 — Webhook Perfect Pay | 🚀 Pronto pra iniciar (depende deploy Vercel) |
+| 10. Marco 6 — Onboarding + Polish | ⏳ Pendente |
 
 ---
 
@@ -213,6 +214,13 @@ Detalhes completos em `DECISIONS.md`.
      CHECK (age_range IN ('18-24', '25-30', '31-38', '39-45', '46-55', '55+') OR age_range IS NULL);
    ```
    Sem isso, criar/editar crush com idade vai falhar no INSERT/UPDATE.
+
+5. **Migration SQL pra ADR-022 (Marco 4 multimodal)** — humano precisa rodar no Supabase SQL Editor:
+   ```sql
+   ALTER TABLE public.generations
+     ADD COLUMN her_message_structured JSONB;
+   ```
+   Sem isso, gerações modo print/áudio vão falhar no INSERT.
 
 Setup operacional: 100% completo. Build verde.
 
