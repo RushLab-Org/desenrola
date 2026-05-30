@@ -34,6 +34,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               >
                 perfil
               </Link>
+              <Link
+                href="/configuracoes"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                config
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3">
