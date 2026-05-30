@@ -41,6 +41,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 023 | Marco 5 — Webhook Perfect Pay + criação automática de conta + reembolso | Aceita | 2026-05-30 |
 | 024 | Few-shot dinâmico por user: últimas 3 vitórias viram exemplos no prompt | Aceita | 2026-05-30 |
 | 025 | Canal de suporte/reembolso: email em vez de WhatsApp | Aceita | 2026-05-30 |
+| 026 | Entrada unificada (texto/print/áudio num bloco só) substitui as tabs do Marco 4 | Aceita | 2026-05-30 |
 
 ---
 
@@ -1206,3 +1207,55 @@ Substituir canal de suporte de WhatsApp pra email. Detalhes:
 - Volume de reembolso crescer muito (>10/dia) → considerar form interno em vez de mailto (controle melhor de tempo de resposta)
 - Cliente de email default do user não abrir corretamente em mobile (raro) → fallback pra `tel:` ou link direto da caixa Gmail
 - Quando comprar domínio: trocar de `apoiosacada@gmail.com` pra email do domínio (`suporte@sacadaia.com.br`) — só atualizar var no Doppler, sem mudança de código
+
+---
+
+## ADR-026: Entrada unificada (texto/print/áudio num bloco só) substitui as tabs do Marco 4
+
+**Data:** 2026-05-30
+**Status:** Aceita
+**Camada:** Produto — UI / Geração
+
+**Relação com ADR-022:** substitui APENAS o aspecto de UI do ADR-022 (as Tabs "Texto / Print / Áudio"). O resto do ADR-022 — multimodal via Gemini nativo, transcrição estruturada persistida em `her_message_structured`, limites de tamanho, princípio de não-armazenar-mídia — **continua vigente**. ADR-022 permanece **Aceita**.
+
+**Contexto:**
+O Marco 4 (ADR-022) entregou os 3 modos de geração (texto, print, áudio) como **tabs separadas** no topo da tela `/gerar`, cada uma com seu próprio form duplicando os mesmos campos (crush, intensidade, intenção, contexto extra). Durante revisão da UI, o humano apontou dois problemas:
+
+1. **Fricção desnecessária:** obrigar o usuário a escolher uma aba "lá em cima" antes de saber o que quer mandar contraria a leitura natural ("recebi isso dela — como respondo?"). O modo da entrada (texto vs print vs áudio) é detalhe de input, não uma decisão que merece navegação.
+2. **Bug de crash:** clicar nas abas **print** ou **áudio** derrubava a tela no `global-error` ("algo quebrou"). Causa raiz: os forms de print/áudio tinham um `<FormItem><FormLabel>` **fora de qualquer `<FormField>`**. O `useFormField()` do shadcn (`components/ui/form.tsx`) faz `throw` quando `FormFieldContext` é `null`, quebrando o render. O form de texto não tinha o problema porque todos os campos estavam dentro de `<FormField>`.
+
+**Decisão:**
+
+Substituir as tabs por um **form único** com um **bloco de mensagem unificado** que aceita as 3 entradas no mesmo lugar:
+
+- **textarea** pra colar o texto da mensagem dela, OU
+- **anexar print** (botão de upload de imagem), OU
+- **enviar/gravar áudio** (upload de arquivo ou `MediaRecorder`).
+
+**Uma modalidade por geração** (mantém o backend do ADR-022 intacto: anexar print limpa o áudio e vice-versa; ter mídia anexada desabilita a textarea pra deixar claro qual entrada vale). No submit, o componente detecta o que foi preenchido e roteia pra action correta (`gerarRespostaPrint` > `gerarRespostaAudio` > `gerarResposta`, nessa precedência). As 3 Server Actions e as 3 funções do Gemini do ADR-022 **não mudaram**.
+
+**Implementação:**
+
+- `app/(app)/gerar/gerar-form.tsx` reescrito de wrapper-de-Tabs pra form único e completo.
+- **Deletados:** `gerar-text-form.tsx`, `gerar-print-form.tsx`, `gerar-audio-form.tsx` (lógica consolidada).
+- Schema de form local na UI com `her_message` **opcional** (print/áudio substituem o texto); regra "pelo menos uma entrada" validada no submit. Server Actions seguem revalidando com os schemas estritos (`geracaoInputSchema` / `geracaoMidiaInputSchema`) — defesa em profundidade preservada.
+- Área de anexo usa `<Label>` puro (NUNCA `<FormItem>`/`<FormLabel>` fora de `<FormField>`) — elimina a causa do crash.
+- Loading dopaminérgico contextual por modalidade mantido (mensagens diferentes pra texto/print/áudio).
+- `components/ui/tabs.tsx` continua no projeto (pode ser usado em outras telas), só não é mais usado em `/gerar`.
+
+**Validação:** `npx tsc --noEmit` OK, `npx eslint` limpo, `npm run build` verde (11 rotas; `/gerar` 22.2 kB).
+
+**Justificativa:**
+- Menos cliques pro WOW (skill `produto-dopaminergico` 1.5: "aha moment" rápido)
+- Corrige o crash na raiz (padrão de uso errado do shadcn Form removido)
+- Risco baixo: backend e schemas do ADR-022 ficam idênticos; só a camada de UI mudou
+- Consolidar 3 forms duplicados num só reduz superfície de manutenção
+
+**Implicações:**
+- `ROADMAP.md` Marco 4 ainda descreve "Tabs Texto/Print/Áudio" — referência histórica, atualização é responsabilidade humana entre sessões (regra do CLAUDE.md)
+- Combinar texto + mídia numa MESMA chamada (uma única geração multimodal com tudo junto) continua fora de escopo — seria refator de `lib/gemini.ts` + schemas (avaliado e rejeitado pra MVP por custo/risco)
+
+**Gatilho de reavaliação:**
+- Usuários quiserem mandar texto + print juntos numa geração só → reavaliar caminho multimodal combinado (opção B descartada agora)
+- Métrica mostrar abandono no bloco de entrada → revisar affordances de anexo
+- Se tabs voltarem a ser úteis em outra parte do app, `tabs.tsx` segue disponível
