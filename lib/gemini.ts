@@ -128,6 +128,16 @@ export type CrushForPrompt = {
   context: string | null;
 };
 
+// Task #35 — few-shot dinâmico por user.
+// Cada item é uma geração passada que o usuário marcou como vitória.
+// Injetamos no prompt pra IA aprender o estilo/voz que funciona pra ele.
+export type VitoriaPassada = {
+  her_message: string | null;
+  ai_options: unknown; // JSONB do banco - validamos shape mínimo no prompt
+  intensity: number;
+  intent: string;
+};
+
 function yn(v: boolean | null): string {
   if (v === true) return 'sim';
   if (v === false) return 'não';
@@ -142,10 +152,46 @@ function labelOrRaw<T extends string>(
   return labels[value as T] ?? value;
 }
 
+/**
+ * Constrói bloco "EXEMPLOS DO QUE JÁ FUNCIONOU" pra injetar no prompt.
+ * Mostra 3 vitórias mais recentes. Limita comprimento pra economizar tokens.
+ * Retorna string vazia se não houver vitórias.
+ */
+function montarVitoriasBloco(vitorias: VitoriaPassada[]): string {
+  if (!vitorias || vitorias.length === 0) return '';
+
+  const top = vitorias.slice(0, 3);
+  const blocos = top.map((v, idx) => {
+    const her = v.her_message ?? '(sem mensagem registrada)';
+    const herTrunc = her.length > 200 ? her.slice(0, 200) + '...' : her;
+    let opcoesText = '(sem opções registradas)';
+
+    if (Array.isArray(v.ai_options)) {
+      opcoesText = (v.ai_options as Array<{ texto?: string }>)
+        .filter((o) => typeof o?.texto === 'string')
+        .map((o) => `   - ${o.texto}`)
+        .join('\n');
+      if (!opcoesText) opcoesText = '(sem opções registradas)';
+    }
+
+    return `[${idx + 1}] intensity=${v.intensity} / intent=${v.intent}
+Mensagem dela: "${herTrunc}"
+Opções geradas (uma delas marcada como vitória):
+${opcoesText}`;
+  });
+
+  return `
+
+EXEMPLOS DO QUE JÁ FUNCIONOU PRA ESSE USUÁRIO (referência de estilo/voz; NÃO copiar literal — usar como calibração do registro):
+
+${blocos.join('\n\n')}`;
+}
+
 function montarPromptUsuario(
   input: GeracaoInput,
   profile: ProfileForPrompt,
   crush: CrushForPrompt,
+  vitorias: VitoriaPassada[] = [],
 ): string {
   const idadeLabel = labelOrRaw(profile.age_range, ageRangeLabels);
   const situacaoLabel = labelOrRaw(profile.marital_status, maritalStatusLabels);
@@ -170,6 +216,7 @@ function montarPromptUsuario(
     : '';
 
   const boost = intensityBoost(input.intensity, input.intent);
+  const vitoriasBloco = montarVitoriasBloco(vitorias);
 
   return `PERFIL DO USUÁRIO:
 - Idade: ${idadeLabel}
@@ -190,7 +237,7 @@ ${input.her_message}
 
 PARÂMETROS DA RESPOSTA SOLICITADA:
 - Intensidade desejada: ${input.intensity} (1=leve, 2=equilibrado, 3=quente, 4=provocante, 5=explícito)
-- Intenção do usuário: ${input.intent}${contextoExtraLine}${boost}
+- Intenção do usuário: ${input.intent}${contextoExtraLine}${boost}${vitoriasBloco}
 
 Gere 3 opções de resposta seguindo o JSON estruturado da PARTE VII do seu prompt.`;
 }
@@ -206,9 +253,15 @@ export async function gerarPorTexto(args: {
   input: GeracaoInput;
   profile: ProfileForPrompt;
   crush: CrushForPrompt;
+  vitorias?: VitoriaPassada[];
 }): Promise<GeracaoOutput> {
   const model = getModel(args.input.intensity);
-  const userPrompt = montarPromptUsuario(args.input, args.profile, args.crush);
+  const userPrompt = montarPromptUsuario(
+    args.input,
+    args.profile,
+    args.crush,
+    args.vitorias ?? [],
+  );
 
   const result = await model.generateContent(userPrompt);
   const response = result.response;
@@ -246,6 +299,7 @@ function montarPromptBase(
   input: GeracaoMidiaInput,
   profile: ProfileForPrompt,
   crush: CrushForPrompt,
+  vitorias: VitoriaPassada[] = [],
 ): string {
   const idadeLabel = labelOrRaw(profile.age_range, ageRangeLabels);
   const situacaoLabel = labelOrRaw(profile.marital_status, maritalStatusLabels);
@@ -270,6 +324,7 @@ function montarPromptBase(
     : '';
 
   const boost = intensityBoost(input.intensity, input.intent);
+  const vitoriasBloco = montarVitoriasBloco(vitorias);
 
   return `PERFIL DO USUÁRIO:
 - Idade: ${idadeLabel}
@@ -285,7 +340,7 @@ PERFIL DA CRUSH (${crush.name}):
 
 PARÂMETROS DA RESPOSTA SOLICITADA:
 - Intensidade desejada: ${input.intensity} (1=leve, 2=equilibrado, 3=quente, 4=provocante, 5=explícito)
-- Intenção do usuário: ${input.intent}${contextoExtraLine}${boost}`;
+- Intenção do usuário: ${input.intent}${contextoExtraLine}${boost}${vitoriasBloco}`;
 }
 
 const PROMPT_PRINT_INSTRUCAO = `
@@ -361,9 +416,15 @@ export async function gerarPorPrint(args: {
   crush: CrushForPrompt;
   imageBase64: string;
   mimeType: string;
+  vitorias?: VitoriaPassada[];
 }): Promise<GeracaoOutputPrint> {
   const model = getModel(args.input.intensity);
-  const basePrompt = montarPromptBase(args.input, args.profile, args.crush);
+  const basePrompt = montarPromptBase(
+    args.input,
+    args.profile,
+    args.crush,
+    args.vitorias ?? [],
+  );
   const fullPrompt = basePrompt + '\n\n' + PROMPT_PRINT_INSTRUCAO;
 
   const result = await model.generateContent([
@@ -401,9 +462,15 @@ export async function gerarPorAudio(args: {
   crush: CrushForPrompt;
   audioBase64: string;
   mimeType: string;
+  vitorias?: VitoriaPassada[];
 }): Promise<GeracaoOutputAudio> {
   const model = getModel(args.input.intensity);
-  const basePrompt = montarPromptBase(args.input, args.profile, args.crush);
+  const basePrompt = montarPromptBase(
+    args.input,
+    args.profile,
+    args.crush,
+    args.vitorias ?? [],
+  );
   const fullPrompt = basePrompt + '\n\n' + PROMPT_AUDIO_INSTRUCAO;
 
   const result = await model.generateContent([

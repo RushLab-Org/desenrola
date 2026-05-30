@@ -3,7 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import { GeracaoBloqueadaError, gerarPorAudio, gerarPorPrint, gerarPorTexto } from '@/lib/gemini';
+import {
+  GeracaoBloqueadaError,
+  gerarPorAudio,
+  gerarPorPrint,
+  gerarPorTexto,
+  type VitoriaPassada,
+} from '@/lib/gemini';
 import {
   ALLOWED_AUDIO_MIME,
   ALLOWED_IMAGE_MIME,
@@ -72,6 +78,9 @@ export async function gerarResposta(input: GeracaoInput): Promise<GerarResult> {
     return { ok: false, error: 'crush não encontrada.' };
   }
 
+  // Few-shot por user (Task #35)
+  const vitorias = await buscarVitoriasRecentes(supabase, user.id);
+
   // Chamar Gemini
   let geracaoOutput: GeracaoOutput;
   try {
@@ -84,6 +93,7 @@ export async function gerarResposta(input: GeracaoInput): Promise<GerarResult> {
         age_range: crush.age_range,
         context: crush.context,
       },
+      vitorias,
     });
   } catch (e) {
     if (e instanceof GeracaoBloqueadaError) {
@@ -235,6 +245,28 @@ function approxBytesFromBase64(b64: string): number {
   return Math.floor((b64.length * 3) / 4) - padding;
 }
 
+// Task #35: busca últimas vitórias do user pra usar como few-shot.
+// Limita a 3 pra economizar tokens (system prompt já é grande).
+// Falha silenciosa: se der erro, retorna [] e a geração segue sem vitórias.
+async function buscarVitoriasRecentes(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<VitoriaPassada[]> {
+  const { data, error } = await supabase
+    .from('generations')
+    .select('her_message, ai_options, intensity, intent')
+    .eq('user_id', userId)
+    .eq('marked_as_win', true)
+    .order('created_at', { ascending: false })
+    .limit(3);
+
+  if (error) {
+    console.warn('buscarVitoriasRecentes falhou (não bloqueante):', error);
+    return [];
+  }
+  return (data ?? []) as VitoriaPassada[];
+}
+
 export async function gerarRespostaPrint(
   input: GeracaoMidiaInput,
   imageBase64: string,
@@ -258,6 +290,8 @@ export async function gerarRespostaPrint(
   const ctx = await preparaContextoGeracao(parsed.data);
   if (ctx.kind === 'error') return { ok: false, error: ctx.error };
 
+  const vitorias = await buscarVitoriasRecentes(ctx.supabase, ctx.user.id);
+
   let geracaoOutput: GeracaoOutputPrint;
   try {
     geracaoOutput = await gerarPorPrint({
@@ -271,6 +305,7 @@ export async function gerarRespostaPrint(
       },
       imageBase64,
       mimeType,
+      vitorias,
     });
   } catch (e) {
     if (e instanceof GeracaoBloqueadaError) {
@@ -341,6 +376,8 @@ export async function gerarRespostaAudio(
   const ctx = await preparaContextoGeracao(parsed.data);
   if (ctx.kind === 'error') return { ok: false, error: ctx.error };
 
+  const vitorias = await buscarVitoriasRecentes(ctx.supabase, ctx.user.id);
+
   let geracaoOutput: GeracaoOutputAudio;
   try {
     geracaoOutput = await gerarPorAudio({
@@ -354,6 +391,7 @@ export async function gerarRespostaAudio(
       },
       audioBase64,
       mimeType,
+      vitorias,
     });
   } catch (e) {
     if (e instanceof GeracaoBloqueadaError) {
