@@ -106,7 +106,11 @@ export function PerfilForm({
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="escolhe..." />
+                        <SelectValue>
+                          {field.value && field.value in ageRangeLabels
+                            ? ageRangeLabels[field.value as keyof typeof ageRangeLabels]
+                            : 'escolhe...'}
+                        </SelectValue>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -131,7 +135,13 @@ export function PerfilForm({
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="escolhe..." />
+                        <SelectValue>
+                          {field.value && field.value in maritalStatusLabels
+                            ? maritalStatusLabels[
+                                field.value as keyof typeof maritalStatusLabels
+                              ]
+                            : 'escolhe...'}
+                        </SelectValue>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -160,7 +170,13 @@ export function PerfilForm({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="escolhe..." />
+                          <SelectValue>
+                            {field.value && field.value in timeSingleLabels
+                              ? timeSingleLabels[
+                                  field.value as keyof typeof timeSingleLabels
+                                ]
+                              : 'escolhe...'}
+                          </SelectValue>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -271,7 +287,13 @@ export function PerfilForm({
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="escolhe..." />
+                        <SelectValue>
+                          {field.value && field.value in primaryGoalLabels
+                            ? primaryGoalLabels[
+                                field.value as keyof typeof primaryGoalLabels
+                              ]
+                            : 'escolhe...'}
+                        </SelectValue>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
