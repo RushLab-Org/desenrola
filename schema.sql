@@ -85,6 +85,8 @@ CREATE TABLE public.crushes (
   name TEXT NOT NULL,
   relationship_type TEXT NOT NULL
     CHECK (relationship_type IN ('namorada', 'ficante', 'conversante', 'ex', 'outras')),
+  age_range TEXT  -- ADR-021: idade dela pra calibrar registro/maturidade da resposta
+    CHECK (age_range IN ('18-24', '25-30', '31-38', '39-45', '46-55', '55+') OR age_range IS NULL),
   context TEXT,  -- texto livre, ~até 5000 chars: signo, gostos, fase do rolo, piadas internas, red flags, etc
   
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -17,7 +17,7 @@ export default async function CrushDetailPage({
 
   const { data: crush } = await supabase
     .from('crushes')
-    .select('id, name, relationship_type, context, created_at, updated_at')
+    .select('id, name, relationship_type, age_range, context, created_at, updated_at')
     .eq('id', id)
     .eq('user_id', user.id)
     .single();
@@ -44,6 +44,7 @@ export default async function CrushDetailPage({
         initial={{
           name: crush.name,
           relationship_type: crush.relationship_type as never,
+          age_range: crush.age_range as never,
           context: crush.context ?? '',
         }}
       />

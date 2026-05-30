@@ -24,6 +24,7 @@ export async function createCrush(input: CrushInput): Promise<CreateCrushResult>
       user_id: user.id,
       name: parsed.data.name,
       relationship_type: parsed.data.relationship_type,
+      age_range: parsed.data.age_range,
       context: parsed.data.context || null,
     })
     .select('id')
@@ -53,6 +54,7 @@ export async function updateCrush(id: string, input: CrushInput): Promise<Action
     .update({
       name: parsed.data.name,
       relationship_type: parsed.data.relationship_type,
+      age_range: parsed.data.age_range,
       context: parsed.data.context || null,
     })
     .eq('id', id)

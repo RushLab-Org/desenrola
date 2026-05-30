@@ -115,6 +115,7 @@ export type ProfileForPrompt = {
 export type CrushForPrompt = {
   name: string;
   relationship_type: string;
+  age_range: string | null;
   context: string | null;
 };
 
@@ -151,6 +152,9 @@ function montarPromptUsuario(
       : 'não informado';
   const objetivoLabel = labelOrRaw(profile.primary_goal, primaryGoalLabels);
   const tipoRelLabel = labelOrRaw(crush.relationship_type, relationshipTypeLabels);
+  const idadeCrushLine = crush.age_range
+    ? `\n- Idade dela: ${labelOrRaw(crush.age_range, ageRangeLabels)}`
+    : '';
 
   const contextoExtraLine = input.extra_context
     ? `\n- Contexto extra desta situação: ${input.extra_context}`
@@ -167,7 +171,7 @@ function montarPromptUsuario(
 - Objetivo principal: ${objetivoLabel}
 
 PERFIL DA CRUSH (${crush.name}):
-- Tipo de relação: ${tipoRelLabel}
+- Tipo de relação: ${tipoRelLabel}${idadeCrushLine}
 - Contexto registrado: ${crush.context?.trim() || '(sem contexto registrado ainda)'}
 
 MENSAGEM DELA:

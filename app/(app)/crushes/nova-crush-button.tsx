@@ -37,7 +37,10 @@ import {
   relationshipTypeOptions,
   type CrushInput,
 } from '@/lib/schemas/crush';
+import { ageRangeOptions, ageRangeLabels } from '@/lib/schemas/profile';
 import { createCrush } from './actions';
+
+const AGE_UNKNOWN = '__unknown__';
 
 // TODO design: visual do dialog/form (definir com humano)
 export function NovaCrushButton({
@@ -55,6 +58,7 @@ export function NovaCrushButton({
     defaultValues: {
       name: '',
       relationship_type: 'conversante',
+      age_range: null,
       context: '',
     },
   });
@@ -128,6 +132,44 @@ export function NovaCrushButton({
                   <FormMessage />
                 </FormItem>
               )}
+            />
+
+            <FormField
+              control={form.control}
+              name="age_range"
+              render={({ field }) => {
+                const value = field.value ?? AGE_UNKNOWN;
+                const label =
+                  field.value && field.value in ageRangeLabels
+                    ? ageRangeLabels[field.value as keyof typeof ageRangeLabels]
+                    : 'não sei';
+                return (
+                  <FormItem>
+                    <FormLabel>idade dela (opcional, mas calibra melhor)</FormLabel>
+                    <Select
+                      value={value}
+                      onValueChange={(v) =>
+                        field.onChange(v === AGE_UNKNOWN ? null : v)
+                      }
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue>{label}</SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={AGE_UNKNOWN}>não sei</SelectItem>
+                        {ageRangeOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>
+                            {ageRangeLabels[opt]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField

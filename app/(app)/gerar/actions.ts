@@ -55,7 +55,7 @@ export async function gerarResposta(input: GeracaoInput): Promise<GerarResult> {
   // Carregar crush (RLS + belt+suspenders)
   const { data: crush } = await supabase
     .from('crushes')
-    .select('id, name, relationship_type, context')
+    .select('id, name, relationship_type, age_range, context')
     .eq('id', parsed.data.crush_id)
     .eq('user_id', user.id)
     .single();
@@ -73,6 +73,7 @@ export async function gerarResposta(input: GeracaoInput): Promise<GerarResult> {
       crush: {
         name: crush.name,
         relationship_type: crush.relationship_type,
+        age_range: crush.age_range,
         context: crush.context,
       },
     });
