@@ -40,6 +40,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 022 | Marco 4 multimodal (print + áudio) com transcrição estruturada persistida | Aceita | 2026-05-30 |
 | 023 | Marco 5 — Webhook Perfect Pay + criação automática de conta + reembolso | Aceita | 2026-05-30 |
 | 024 | Few-shot dinâmico por user: últimas 3 vitórias viram exemplos no prompt | Aceita | 2026-05-30 |
+| 025 | Canal de suporte/reembolso: email em vez de WhatsApp | Aceita | 2026-05-30 |
 
 ---
 
@@ -1154,3 +1155,54 @@ Opções geradas (uma delas marcada como vitória):
 - Custo Gemini explodir → reduzir pra 1-2 vitórias ou truncar mais agressivamente
 - Aprendizado coletivo (opção C) virar prioridade → arquitetura precisa ser refeita (privacy, agregação, fine-tuning real)
 - Marcar como vitória ficar visível mas pouco usado → adicionar prompt UX pra encorajar marcação
+
+---
+
+## ADR-025: Canal de suporte/reembolso: email em vez de WhatsApp
+
+**Data:** 2026-05-30
+**Status:** Aceita
+**Camada:** Produto — UX / Operações
+
+**Contexto:**
+ADR-023 (Marco 5) implementou o botão "solicitar reembolso" abrindo WhatsApp pré-formatado (`wa.me/{numero}?text=...`) via variável `SUPPORT_WHATSAPP`. Durante setup de deploy Vercel (2026-05-30), o humano decidiu trocar pra email — mais profissional, escalável e barato no MVP.
+
+**Decisão:**
+
+Substituir canal de suporte de WhatsApp pra email. Detalhes:
+
+- **Variável de ambiente:** `NEXT_PUBLIC_SUPPORT_EMAIL` (prefixo `NEXT_PUBLIC_` obrigatório porque o botão é Client Component, precisa expor no browser)
+- **Valor inicial (MVP):** `apoiosacada@gmail.com` (email Gmail dedicado, criado pelo humano)
+- **Comportamento do botão:** abre `mailto:apoiosacada@gmail.com?subject=Solicitar reembolso — Sacada IA&body=Email da conta: {email}\n\nMotivo do reembolso:\n\n` no cliente de email padrão do user
+- **Variáveis removidas:** `SUPPORT_WHATSAPP` (deletada de Doppler dev e prd)
+
+**Mudanças no código:**
+
+- `app/(app)/configuracoes/reembolso-button.tsx`:
+  - Prop `whatsappNumber` → `supportEmail`
+  - Lê `process.env.NEXT_PUBLIC_SUPPORT_EMAIL` em fallback
+  - Removido fallback hardcoded `5547999999999`
+  - Ícone `MessageCircle` → `Mail`
+  - Copy: "abrir WhatsApp" → "abrir email"
+  - Se var não setada, exibe `alert()` em vez de abrir mailto vazio (fail-loud)
+
+**Justificativa:**
+
+- Email tem trail/histórico (WhatsApp depende do app, perde mensagem em troca de aparelho)
+- Suporte pode ser de qualquer pessoa do time (gmail compartilhado vs número de uma pessoa)
+- Sem precisar gerenciar número WhatsApp Business, pix do número, app desinstalado etc
+- LGPD: email é dado de contato padrão pra comunicação comercial
+- Quando comprar domínio: migrar pra `suporte@sacadaia.com.br` é só trocar 1 var no Doppler
+
+**Implicações:**
+
+- Variável atualizada manualmente no Doppler dev + prd
+- Vercel re-importou as vars via integração (deploy já refletindo)
+- `agente.md`, `skills/doppler-helper.md`, `lib/schemas/perfectpay.ts` ainda mencionam `SUPPORT_WHATSAPP` em comentários — responsabilidade humana atualizar entre sessões (regra do CLAUDE.md)
+- ROADMAP atualizado refletindo nova variável
+
+**Gatilho de reavaliação:**
+
+- Volume de reembolso crescer muito (>10/dia) → considerar form interno em vez de mailto (controle melhor de tempo de resposta)
+- Cliente de email default do user não abrir corretamente em mobile (raro) → fallback pra `tel:` ou link direto da caixa Gmail
+- Quando comprar domínio: trocar de `apoiosacada@gmail.com` pra email do domínio (`suporte@sacadaia.com.br`) — só atualizar var no Doppler, sem mudança de código

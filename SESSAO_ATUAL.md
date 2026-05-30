@@ -1,8 +1,37 @@
-# Sessão atual — Sacada IA (atualizado em 2026-05-29 tarde)
+# Sessão atual — Sacada IA (atualizado em 2026-05-30 madrugada)
 
-**Estado:** Setup 100% + Marco 1 implementado + downgrade pra Next 15 + React 18 (Opção B + C). **Build verde. Pronto pra Marco 2.**
+**Estado:** Setup 100% + Marcos 1-5 implementados + few-shot dinâmico + **deploy Vercel feito e magic link validado em produção**. URL: `https://sacada-ia.vercel.app`. Falta validar webhook Perfect Pay com compra real (Etapa 2).
 **Repositório:** `RushLab-Org/Sacada-ia` (GitHub privado)
+**URL produção:** `https://sacada-ia.vercel.app` (domínio definitivo a comprar depois)
 **Meta de entrega:** MVP funcional em 12-18h focadas
+
+---
+
+## 🌅 PRA RETOMAR AMANHÃ — começar exatamente aqui
+
+**Estado de hoje (2026-05-30 madrugada) ao parar:**
+- Deploy Vercel feito ✅
+- Magic link validado end-to-end em produção ✅ (Etapa 1 do teste Marco 5)
+- Webhook Perfect Pay configurado pra apontar pra `https://sacada-ia.vercel.app/api/webhooks/perfectpay` ✅
+- Webhook NÃO testado com compra real ainda ⏳
+
+**Primeiro passo amanhã: Etapa 2 do teste end-to-end Marco 5**
+
+1. Fazer **compra real R$ 47** na Perfect Pay (cartão ou PIX teu — depois pede refund pra recuperar)
+2. Acompanhar logs da Vercel: **Vercel dashboard → projeto sacada-ia → Logs / Runtime Logs** — procurar POST em `/api/webhooks/perfectpay` retornando 200 com `action: "activated"`
+3. Verificar Supabase **Authentication → Users**: deve aparecer user novo com email da compra
+4. Verificar Supabase **Table Editor → profiles**: novo user com `subscription_status='active'` + `transaction_id` preenchido
+5. Verificar caixa de email da compra: magic link deve ter chegado
+6. Clicar no magic link → deve entrar logado em `https://sacada-ia.vercel.app/`
+7. Acessar `/configuracoes` → conferir que mostra "ativo" + "vitalício" + data de compra
+8. **Testar reembolso:**
+   - Clicar "solicitar reembolso" → abre email pra `apoiosacada@gmail.com` (não precisa enviar de verdade — só conferir que abriu)
+   - Vai na Perfect Pay e estorna a compra manualmente
+   - Acompanha logs Vercel → POST com `action: "refunded"`
+   - Volta `/configuracoes` → status deve ter virado "reembolsado"
+9. **Bug conhecido pra confirmar/corrigir após Etapa 2:** middleware ainda NÃO bloqueia user `refunded` (TODO comentado em `middleware.ts:58`). Após teste OK, implementar esse check + redeploy.
+
+**Depois da Etapa 2 OK, decisão:** Marco 6 (Onboarding + Polish) OU pausa pra design no Claude Design.
 
 ---
 
@@ -11,17 +40,19 @@
 | Fase | Estado |
 |---|---|
 | 1. Initial Understanding | ✅ Completa |
-| 2. Design Arquitetural | ✅ Completa — 19 ADRs (002→016→018 evolução; 017 obsoleta) |
+| 2. Design Arquitetural | ✅ Completa — 24 ADRs (002→016→018 evolução; 017 obsoleta) |
 | 3. Setup Inicial (contas + Doppler + repo + schema) | ✅ Completa |
 | 4. Setup técnico (Next 15 + React 18 + shadcn + Prettier + prompts/) | ✅ Completa |
-| 5. Marco 1 — Auth + Schema base | ✅ Implementado + build verde |
+| 5. Marco 1 — Auth + Schema base | ✅ Implementado + magic link validado em prod |
 | 6. Marco 2 — CRUD Crushes + Perfil | ✅ Implementado + build verde |
 | 7. Marco 3 — Geração de respostas (texto) | ✅ Implementado + build verde |
 | 8. Marco 4 — Multimodal (print + áudio) | ✅ Implementado + build verde |
-| 9. Marco 5 — Webhook Perfect Pay | ✅ Código implementado + build verde (validação end-to-end pendente deploy) |
-| 10. Few-shot dinâmico por user (opção A, Task #35) | ✅ Implementado (ADR-024) — beneficia user com vitórias acumuladas |
-| 11. Deploy Vercel + ativar webhook real | 🚀 Próximo (humano executa parte) |
-| 12. Marco 6 — Onboarding + Polish | ⏳ Pendente |
+| 9. Marco 5 — Webhook Perfect Pay | ✅ Código implementado + deploy ativo (Etapa 2 do teste pendente — compra real) |
+| 10. Few-shot dinâmico por user (opção A, Task #35) | ✅ Implementado (ADR-024) |
+| 11. Deploy Vercel + ativar webhook real | ✅ Deploy feito, URL `https://sacada-ia.vercel.app`, env vars sincronizadas |
+| 12. Suporte trocado de WhatsApp pra email | ✅ `NEXT_PUBLIC_SUPPORT_EMAIL=apoiosacada@gmail.com` |
+| 13. **Etapa 2 teste Marco 5** (compra real + webhook + refund) | 🚀 **PRÓXIMO — começar amanhã** |
+| 14. Marco 6 — Onboarding + Polish | ⏳ Pendente |
 
 ---
 
@@ -200,34 +231,15 @@ Detalhes completos em `DECISIONS.md`.
 ## Decisões PENDENTES (resumo)
 
 1. **ADR sobre redução do limite 200→50 gerações/dia** — autorização pendente do humano pra formalizar (atualmente só TODO no ROADMAP linha "Ajuste de margem pré-tráfego pago")
-2. **Visual de todas as telas dos Marcos 1, 2 e 3** — humano quer participar via Claude Design
-3. **Migration SQL pra ADR-020 (intensidade 1-5)** — humano precisa rodar no Supabase SQL Editor:
-   ```sql
-   ALTER TABLE public.generations DROP CONSTRAINT generations_intensity_check;
-   ALTER TABLE public.generations ADD CONSTRAINT generations_intensity_check
-     CHECK (intensity BETWEEN 1 AND 5);
-   ```
-   Sem isso, gerações com intensidade 5 vão FALHAR no INSERT.
-
-4. **Migration SQL pra ADR-021 (age_range na crush)** — humano precisa rodar no Supabase SQL Editor:
-   ```sql
-   ALTER TABLE public.crushes
-     ADD COLUMN age_range TEXT
-     CHECK (age_range IN ('18-24', '25-30', '31-38', '39-45', '46-55', '55+') OR age_range IS NULL);
-   ```
-   Sem isso, criar/editar crush com idade vai falhar no INSERT/UPDATE.
-
-5. **Migration SQL pra ADR-022 (Marco 4 multimodal)** — humano precisa rodar no Supabase SQL Editor:
-   ```sql
-   ALTER TABLE public.generations
-     ADD COLUMN her_message_structured JSONB;
-   ```
-   Sem isso, gerações modo print/áudio vão falhar no INSERT.
-
-6. **ADR-023 (Marco 5) — sem migration nova, MAS:**
-   - Adicionar `NEXT_PUBLIC_SUPPORT_WHATSAPP` no Doppler (botão de reembolso usa). Atualmente fallback hardcoded `5547999999999` no `reembolso-button.tsx`.
-   - Após deploy Vercel: atualizar URL do webhook na Perfect Pay pra `https://<vercel-url>/api/webhooks/perfectpay` (hoje está em `webhook.site` placeholder).
-   - Adicionar URL de produção em Supabase Auth → Redirect URLs (`https://<vercel-url>/auth/callback`).
+2. **Visual de todas as telas dos Marcos 1, 2, 3, 4 e 5** — humano quer participar via Claude Design (claude.ai/design). Fica pra depois de Marco 5 validado.
+3. **Migrations SQL** (ADR-020, 021, 022) — **TODAS RODADAS em 2026-05-30** ✅
+4. **Configurações pré-deploy** — TODAS APLICADAS em 2026-05-30 ✅:
+   - Doppler config `prd` criada e populada
+   - `NEXT_PUBLIC_SUPPORT_EMAIL=apoiosacada@gmail.com` (substituiu `SUPPORT_WHATSAPP` em todas as configs)
+   - Vercel deploy: `https://sacada-ia.vercel.app`
+   - Supabase Auth Redirect URLs atualizadas pra incluir produção
+   - Perfect Pay webhook URL atualizada
+5. **TODO técnico restante:** `middleware.ts:58` ainda tem comentário `// TODO Marco 5: checar subscription_status === 'active' aqui pra bloquear não-pagantes`. Implementar APÓS confirmar fluxo end-to-end na Etapa 2.
 
 Setup operacional: 100% completo. Build verde.
 
@@ -244,16 +256,9 @@ Setup operacional: 100% completo. Build verde.
 
 ---
 
-## Próximo passo recomendado
+## Próximo passo recomendado (já listado em "🌅 PRA RETOMAR AMANHÃ" no topo)
 
-1. **Teste manual end-to-end do Marco 3** (humano):
-   - Acessar `/gerar`, escolher crush, colar mensagem dela, escolher intensidade/intenção, gerar
-   - Confirmar que 3 opções aparecem com tom diferente cada
-   - Testar "copiar" em uma opção
-   - Se aparecer info nova detectada, testar "salvar no perfil dela"
-   - Testar "essa funcionou?"
-2. **Design das telas dos Marcos 1, 2 e 3** com humano via Claude Design
-3. **Marco 4** — Multimodal (print + áudio) — 2-3h
+Resumo: Etapa 2 do teste Marco 5 (compra real + webhook + refund), depois decidir entre Marco 6 ou pausa pra design.
 
 **Sequência dos marcos restantes:**
 2. Marco 2 (CRUD de crushes + Perfil do usuário) — 2-3h

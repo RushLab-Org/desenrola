@@ -51,15 +51,17 @@
 
 ---
 
-## ⚠️ Após primeiro deploy na Vercel (não esquecer)
+## ⚠️ Após primeiro deploy na Vercel — TUDO RESOLVIDO em 2026-05-30 ✅
 
-Três placeholders foram colocados no setup inicial pra destravar o desenvolvimento. Antes de rodar tráfego pago em cima, trocar todos:
-
-- [ ] **Doppler — `NEXT_PUBLIC_APP_URL`:** trocar `http://localhost:3000` pelo URL real do app na Vercel (ex: `https://app.sacadaia.com.br`)
-- [ ] **Doppler — `SUPPORT_WHATSAPP`:** trocar o número placeholder pelo número real de suporte
-- [ ] **Perfect Pay — URL do Webhook:** trocar `https://webhook.site/...` pelo endpoint real `https://app.sacadaia.com.br/api/webhooks/perfectpay`
-
-Sem essas trocas, vendas reais vão entrar mas webhook nunca chega no app (cara paga e não recebe acesso).
+- [x] **Doppler `prd` criada e populada** (config era só dev no setup, criada via CLI em 2026-05-30)
+- [x] **Doppler — `NEXT_PUBLIC_APP_URL`:** atualizada de `http://localhost:3000` pra `https://sacada-ia.vercel.app` em prd
+- [x] **`SUPPORT_WHATSAPP` substituída por `NEXT_PUBLIC_SUPPORT_EMAIL`** (humano decidiu trocar canal de WhatsApp pra email — apoiosacada@gmail.com). Código de `reembolso-button.tsx` atualizado pra abrir `mailto:` em vez de `wa.me`.
+- [x] **Perfect Pay — URL do Webhook:** trocada pra `https://sacada-ia.vercel.app/api/webhooks/perfectpay` (era `webhook.site` placeholder)
+- [x] **Supabase Auth — Redirect URLs:** adicionada `https://sacada-ia.vercel.app/auth/callback`; Site URL atualizada pra `https://sacada-ia.vercel.app`
+- [x] **Vercel deploy ativo:** `https://sacada-ia.vercel.app` (domínio `.vercel.app` temporário até comprar definitivo)
+- [x] **Magic link validado end-to-end em produção** (Etapa 1 do teste Marco 5)
+- [ ] **Etapa 2 do teste Marco 5** — compra real R$ 47 + webhook + refund (próximo passo de 2026-05-31)
+- [ ] **Implementar check de subscription_status no `middleware.ts:58`** — bloquear acesso de users `refunded`. Fazer APÓS Etapa 2 OK.
 
 ### Ajuste de margem pré-tráfego pago
 
