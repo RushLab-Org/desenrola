@@ -10,6 +10,14 @@
 
 ---
 
+## 🔴 Sessão 2026-05-31 — resumo (detalhes em SESSAO_ATUAL.md)
+
+**Feito (no ar):** entrada unificada texto/print/áudio (ADR-026), calibração da IA + intenção `sexualizar` (ADR-027/028), **Gemini 3.5 Flash** (ADR-031), **login híbrido** email+senha (ADR-029), like por opção 🔥 (ADR-030), **onboarding de 5 telas** (ADR-032), **design system "Onyx & Brasa"** (ADR-033), rename crush→mulher, **gate de assinatura** ligado (ADR-034).
+
+**Pendente:** passada de design **estrutural** (lista de mulheres c/ avatar+stats, barra de calibração no perfil, resultado como tela separada, labels do gerar, header/nav); hardening de acesso (Vercel público + bloquear signup público); teste end-to-end Marco 5 (compra real); alavancas de custo do 3.5 Flash + limite 200→50 antes de tráfego.
+
+---
+
 ## Setup inicial (pré-requisito dos marcos)
 
 ### Contas externas
@@ -208,13 +216,12 @@
 ### Marco 6 — Onboarding dopaminérgico + Polish
 *Meta: 2-3 horas. Esse marco separa MVP que vende de MVP que falha.*
 
-**Onboarding (6 telas pós-primeiro-login):**
-- [ ] Tela 1: "Vamos te conhecer rapidinho" — captura perfil do usuário (idade + estado civil)
-- [ ] Tela 2: situação (recém-solteiro? voltando ao mercado? filhos?) — chips, máximo 30s pra preencher
-- [ ] Tela 3: "O que você quer melhorar?" multi-select + objetivo single-select
-- [ ] Tela 4: "Vamos criar o perfil da sua primeira crush" — guiado
-- [ ] Tela 5: "Cole a última mensagem dela" — demonstração ao vivo
-- [ ] Tela 6: Resposta gerada na tela + "Sua IA tá calibrada. Esse é seu app." (CTA pra explorar)
+**Onboarding — FEITO em 5 telas (ADR-032), não 6:**
+- [x] Tela 1: "bora te conhecer" — perfil básico (idade, situação, voltando ao mercado, filhos)
+- [x] Tela 2: "o que você quer melhorar" (multi) + objetivo — salva o perfil
+- [x] Tela 3: "tua primeira mulher" — cria a 1ª mulher
+- [x] Tela 4: "cola algo que ela te mandou" (mensagem + tom, com botão de exemplo)
+- [x] Tela 5: demonstração ao vivo (a IA gera) + "tá calibrada, esse é teu app" → entra
 
 **Polish geral:**
 - [ ] Empty states com personalidade em TODAS as listas/telas
