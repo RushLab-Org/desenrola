@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -19,8 +18,7 @@ import {
 import { signInWithEmail, signInWithPassword } from './actions';
 
 // Um único form (email + senha). O modo só controla se o campo de senha aparece
-// e qual ação roda no submit — evita o bug de trocar de FormProvider na mesma
-// posição (que quebrava o onChange do input). Auth: ADR-029.
+// e qual ação roda no submit. Auth: ADR-029. Visual: Onyx & Brasa (ADR-033).
 const loginFormSchema = z.object({
   email: z.email('email inválido'),
   password: z.string().optional(),
@@ -28,7 +26,6 @@ const loginFormSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
-// TODO design: layout/cores/spacing visuais (definir com humano)
 export default function LoginPage() {
   const [mode, setMode] = useState<'password' | 'magic'>('password');
   const [sent, setSent] = useState(false);
@@ -62,53 +59,75 @@ export default function LoginPage() {
       toast.error(result.error);
       return;
     }
-    // sessão setada via cookie no server action; reload garante o middleware ver
     window.location.assign('/');
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Sacada IA</CardTitle>
-          <CardDescription>
-            {sent
-              ? 'olha tua caixa de entrada. o link tá lá.'
-              : mode === 'password'
-                ? 'entra com teu email e senha.'
-                : 'manda teu email. te mando o link pra entrar.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {sent ? (
-            <div className="text-muted-foreground text-sm">
-              <p>se não chegar em 1 minuto, olha o spam.</p>
-              <Button
-                variant="link"
-                className="mt-2 h-auto p-0"
-                onClick={() => {
-                  setSent(false);
-                  form.reset();
-                }}
-              >
-                voltar
-              </Button>
-            </div>
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <main className="flex min-h-svh flex-col items-center justify-center px-6 py-12">
+      <div className="w-full max-w-sm">
+        <div className="mb-10 text-center">
+          <h1 className="font-serif text-[2.6rem] leading-none font-medium tracking-tight">
+            Sacada
+          </h1>
+          <p className="text-primary mt-3 text-[11px] font-medium tracking-[0.25em] uppercase">
+            inteligência de conversa
+          </p>
+        </div>
+
+        {sent ? (
+          <div className="text-muted-foreground text-center text-sm">
+            <p>olha tua caixa de entrada. o link tá lá.</p>
+            <p className="mt-1 text-xs">se não chegar em 1 minuto, olha o spam.</p>
+            <Button
+              variant="link"
+              className="mt-3 h-auto p-0"
+              onClick={() => {
+                setSent(false);
+                form.reset();
+              }}
+            >
+              voltar
+            </Button>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-muted-foreground text-[11px] tracking-wider uppercase">
+                      email
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        placeholder="voce@exemplo.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {mode === 'password' && (
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>email</FormLabel>
+                      <FormLabel className="text-muted-foreground text-[11px] tracking-wider uppercase">
+                        senha
+                      </FormLabel>
                       <FormControl>
                         <Input
-                          type="email"
-                          inputMode="email"
-                          autoComplete="email"
-                          placeholder="voce@exemplo.com"
+                          type="password"
+                          autoComplete="current-password"
+                          placeholder="tua senha"
                           {...field}
                         />
                       </FormControl>
@@ -116,60 +135,60 @@ export default function LoginPage() {
                     </FormItem>
                   )}
                 />
+              )}
 
-                {mode === 'password' && (
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>senha</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            autoComplete="current-password"
-                            placeholder="tua senha"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting
-                    ? mode === 'password'
-                      ? 'entrando...'
-                      : 'mandando...'
-                    : mode === 'password'
-                      ? 'entrar'
-                      : 'mandar link'}
-                </Button>
-              </form>
-            </Form>
-          )}
-
-          {!sent && (
-            <div className="mt-4 text-center">
               <Button
-                type="button"
+                type="submit"
+                className="mt-2 h-12 w-full"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting
+                  ? mode === 'password'
+                    ? 'entrando...'
+                    : 'mandando...'
+                  : mode === 'password'
+                    ? 'entrar'
+                    : 'mandar link'}
+              </Button>
+            </form>
+          </Form>
+        )}
+
+        {!sent && (
+          <div className="mt-5 text-center text-sm">
+            {mode === 'password' ? (
+              <>
+                <p className="text-muted-foreground">primeira vez ou esqueceu a senha?</p>
+                <Button
+                  variant="link"
+                  className="text-primary h-auto p-0"
+                  onClick={() => {
+                    setMode('magic');
+                    form.clearErrors();
+                  }}
+                >
+                  entra com link no email
+                </Button>
+              </>
+            ) : (
+              <Button
                 variant="link"
-                className="text-muted-foreground h-auto p-0 text-xs"
+                className="text-primary h-auto p-0"
                 onClick={() => {
-                  setMode(mode === 'password' ? 'magic' : 'password');
+                  setMode('password');
                   form.clearErrors();
                 }}
               >
-                {mode === 'password'
-                  ? 'primeira vez ou esqueceu a senha? entra com link'
-                  : 'já tenho senha — entrar com email e senha'}
+                já tenho senha — entrar com email e senha
               </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </div>
+        )}
+      </div>
+
+      <p className="text-muted-foreground mt-auto pt-10 text-[10px] tracking-[0.2em] uppercase">
+        conversas adultas · uso individual
+      </p>
     </main>
   );
 }

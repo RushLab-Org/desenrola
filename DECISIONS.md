@@ -48,6 +48,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 030 | Vitória por opção (🔥) + coleta pro aprendizado macro pós-MVP (injeção per-user segue grosseira) | Aceita | 2026-05-31 |
 | 031 | Modelo de geração: Gemini 3.5 Flash substitui 2.5 Flash (qualidade/variação; custo ~5-8x, mitigável) | Aceita | 2026-05-31 |
 | 032 | Onboarding guiado em 5 telas (Marco 6); onboarding_completed marcado ao salvar perfil | Aceita | 2026-05-31 |
+| 033 | Design system "Onyx & Brasa" — dark-only, Inter+Cormorant, tokens shadcn redefinidos | Aceita | 2026-05-31 |
 
 ---
 
@@ -1563,3 +1564,40 @@ Marcado **`true` ao salvar o perfil (passo 2)**, NÃO no fim. Motivo: a demonstr
 - Refresh-no-meio gerar crush duplicada incomodar → persistir step do wizard (localStorage) ou guardar progresso no banco
 - Métrica de conclusão baixa → cortar/fundir passos ou mover captura pro próprio uso
 - Passada de design → reestilizar as 5 telas junto com o resto
+
+---
+
+## ADR-033: Design system "Onyx & Brasa"
+
+**Data:** 2026-05-31
+**Status:** Aceita
+**Camada:** Produto — Design / Frontend
+
+**Contexto:**
+Até aqui o app era funcional mas visualmente cru (shadcn padrão, tema claro, sem identidade — os `TODO design` espalhados). O humano produziu (no Claude/design) um **design system completo aprovado** — "Onyx & Brasa" — com tokens de cor, tipografia, specs de componente e 6 mockups de referência (login, dashboard, gerar, resultado, mulheres, perfil).
+
+**Decisão — sistema visual:**
+- **Dark-only** (sem light mode no MVP). Mobile-first.
+- **Paleta:** fundo onyx `#0A0A0A`, superfície `#1A1A1A`, accent brasa `#A0182A` (hover/bright `#C8243C`), texto branco-quente `#F5F1E8`, secundário `#A8A292`, borda aço `#3F4147`, + surface-warm `#14100E` e tag-bg `#2A1A1F`.
+- **Tipografia:** Cormorant Garamond (títulos de tela, logo, nome da mulher, números de stat) + Inter (corpo, botões, labels, tudo o resto). Via `next/font`.
+
+**Como foi aplicado (abordagem):**
+O app é Tailwind v4 + shadcn com tokens semânticos. Em vez de reescrever componente por componente, **redefini os tokens em `globals.css`** (`--background`, `--card`, `--primary`, `--secondary`, `--muted`, `--accent`, `--border`, `--ring`, etc.) pro Onyx & Brasa → **toda tela re-tematiza automaticamente**. Dark é o padrão (valores em `:root` E `.dark`, + classe `dark` no `<html>` pra ativar os `dark:` variants do shadcn). Fontes via `next/font` com `--font-sans` (Inter) e `--font-cormorant` (mapeado em `@theme` como `font-serif`).
+
+**Passada 1 — FUNDAÇÃO (feita agora):**
+- `globals.css`: tokens Onyx & Brasa + mapeamento de fontes + tokens custom (surface-warm, tag, brasa-bright)
+- `app/layout.tsx`: Inter + Cormorant, classe `dark`
+- `app/login/page.tsx`: redesenhada igual ao mockup (logo Cormorant centralizado + tagline brasa "inteligência de conversa" + footer "conversas adultas · uso individual")
+- `font-serif` (Cormorant) nos h1 de tela (home, gerar, mulheres, detalhe, configurações) + logo do header
+
+**Passada 2 — ESTRUTURAL (pendente, próxima):**
+Elementos dos mockups que são estrutura nova, não só cor: stats do dashboard (gerações/mulheres/vitórias + "% calibrado"), avatar + stats por mulher na lista, barra de calibração no perfil, acabamento do resultado (tag de tom, border-left brasa, card de skills com `surface-warm`). Exigem queries/cálculo e componentes novos.
+
+**Notas:**
+- "0.5px" das bordas → uso 1px com a cor aço `#3F4147` (0.5px é inconsistente entre navegadores; visualmente fino no dark)
+- Mockups dizem "crushes"; mantido "mulheres" (decisão mais nova, ADR de rename)
+- Botão "enviar/WhatsApp" do resultado: fora do escopo agora (humano pediu pra não incluir)
+
+**Gatilho de reavaliação:**
+- Light mode algum dia → adicionar tokens no `:root` separado + toggle
+- Se a passada estrutural revelar specs faltando → pedir mockup adicional ao humano

@@ -30,7 +30,7 @@ export default async function HomePage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-12">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">tá dentro.</h1>
+        <h1 className="font-serif text-3xl font-medium tracking-tight">tá dentro.</h1>
         <p className="text-muted-foreground mt-2 max-w-prose">
           {onboardingDone
             ? 'IA calibrada. recebeu mensagem dela? gera resposta agora.'

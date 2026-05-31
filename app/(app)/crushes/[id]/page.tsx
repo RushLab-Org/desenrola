@@ -35,7 +35,7 @@ export default async function CrushDetailPage({
       </Link>
 
       <header className="mb-6 flex items-start justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{crush.name}</h1>
+        <h1 className="font-serif text-3xl font-medium tracking-tight">{crush.name}</h1>
         <DeleteCrushButton id={crush.id} name={crush.name} />
       </header>
 

@@ -20,7 +20,7 @@ export default async function CrushesPage() {
     <div className="mx-auto w-full max-w-3xl px-4 py-8">
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">tuas mulheres</h1>
+          <h1 className="font-serif text-3xl font-medium tracking-tight">tuas mulheres</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             cada uma tem um perfil próprio. quanto mais contexto, melhor a IA calibra.
           </p>

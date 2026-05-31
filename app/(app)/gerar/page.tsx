@@ -29,7 +29,7 @@ export default async function GerarPage() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">gerar resposta</h1>
+        <h1 className="font-serif text-3xl font-medium tracking-tight">gerar resposta</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           cola o que ela mandou, escolhe o tom, e a IA te dá 3 opções.
         </p>

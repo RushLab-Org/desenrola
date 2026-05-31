@@ -1,16 +1,19 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter, Cormorant_Garamond } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+// Onyx & Brasa: Inter no corpo, Cormorant nos títulos (ADR-033).
+const inter = Inter({
   subsets: ['latin'],
+  variable: '--font-sans',
+  weight: ['400', '500'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
+  variable: '--font-cormorant',
+  weight: ['400', '500', '600'],
 });
 
 // TODO design: metadata final (título canonical, OG image, etc) com humano
@@ -27,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`dark ${inter.variable} ${cormorant.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col">

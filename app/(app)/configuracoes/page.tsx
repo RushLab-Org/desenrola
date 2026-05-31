@@ -46,7 +46,7 @@ export default async function ConfiguracoesPage() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-8">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">configurações</h1>
+        <h1 className="font-serif text-3xl font-medium tracking-tight">configurações</h1>
       </header>
 
       <Card>
