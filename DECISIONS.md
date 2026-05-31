@@ -46,6 +46,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 028 | Intenção "sexualizar" substitui "outros" na taxonomia de geração | Aceita | 2026-05-30 |
 | 029 | Login híbrido: magic link no 1º acesso + email/senha definida depois (evolui ADR-005) | Aceita | 2026-05-31 |
 | 030 | Vitória por opção (🔥) + coleta pro aprendizado macro pós-MVP (injeção per-user segue grosseira) | Aceita | 2026-05-31 |
+| 031 | Modelo de geração: Gemini 3.5 Flash substitui 2.5 Flash (qualidade/variação; custo ~5-8x, mitigável) | Aceita | 2026-05-31 |
 
 ---
 
@@ -1484,3 +1485,41 @@ O like é marcado **na tela do resultado**. A visão completa do humano ("marcar
 - Volume de 🔥 suficiente + oferta validada → construir o motor macro (com pipeline de anonimização/LGPD)
 - Se quiserem feedback "depois da reação dela" → construir histórico rolante por crush (pós-MVP)
 - Se o macro provar que certos padrões funcionam muito → dobrar no system prompt como calibração fixa
+
+---
+
+## ADR-031: Modelo de geração — Gemini 3.5 Flash substitui 2.5 Flash
+
+**Data:** 2026-05-31
+**Status:** Aceita (evolui ADR-006)
+**Camada:** IA
+
+**Contexto:**
+Testes manuais (ADR-007) mostraram o **Gemini 2.5 Flash** gerando respostas **repetitivas e às vezes carentes** (3 opções variando pouco entre si; tom "queria estar aí..."). Comparando o mesmo prompt ("acabei de sair do banho", intensidade 4, ficante) no 2.5-flash vs **3.5-flash**:
+- 3.5 variou de verdade (3 ângulos distintos), tom mais afirmativo/postura, mantendo permissividade.
+- 2.5 repetiu a mesma jogada ("que pena não estar aí" 3x) com tom mais carente.
+
+Verificado via API + via o SDK do app (`@google/generative-ai`): 3.5-flash existe na key, aceita `BLOCK_NONE` nas 4 categorias, gera explícito quando pedido, e `response.text()` devolve JSON válido (o "thinking" do 3.x não quebra o parse).
+
+**Decisão:**
+Trocar o modelo de `gemini-2.5-flash` → `gemini-3.5-flash` em `lib/gemini.ts` (todas as intensidades). Mantém systemInstruction (v3), `responseMimeType: application/json`, `BLOCK_NONE`, temperatura escalonada e multimodal.
+
+**Custo (honesto):**
+- 2.5-flash: $0,30 input / $2,50 output por 1M.
+- 3.5-flash: **$1,50 input / $9,00 output** por 1M (output inclui tokens de "thinking").
+- ≈ 5x input, 3,6x output; com thinking, **~5-8x mais caro por geração** (estimativa ~R$ 0,15-0,18/geração vs ~R$ 0,02-0,03 do 2.5).
+
+**Justificativa:**
+- Princípio fundador: validar a oferta rápido. Qualidade da resposta afeta **conversão e refund** diretamente — vale mais que economizar centavos no volume baixo da validação.
+- Mantém o pilar comercial (permissividade BLOCK_NONE pro conteúdo adulto), que modelos frontier tipo Claude NÃO mantêm (recusariam o explícito).
+
+**Alavancas pra escala (aplicar ANTES de tráfego pago pesado — gatilho de reavaliação):**
+1. **Context caching** do system prompt v3 (~7k tokens fixos) → corta o grosso do input.
+2. **Limitar/desligar o "thinking"** se o SDK permitir → corta o output inflado.
+3. **Híbrido:** 3.5 nas intensidades 4-5, 2.5 nas 1-3 (qualidade onde importa).
+4. Reduzir limite **200→50 gerações/dia** (já pendente no ROADMAP).
+
+**Gatilho de reavaliação:**
+- Custo médio por venda/assinante exceder o orçamento de margem → aplicar alavancas 1-4 OU voltar pro híbrido/2.5
+- Latência do thinking incomodar usuário → cap de thinking ou voltar 2.5
+- Migração pra assinatura → reavaliar limite diário + plano vs custo de inferência (ver discussão de unit economics)

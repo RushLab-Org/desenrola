@@ -62,7 +62,9 @@ function temperatureFor(intensity: number): number {
 function getModel(intensity: number) {
   const genAI = new GoogleGenerativeAI(requireEnv('GEMINI_API_KEY'));
   return genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
+    // ADR-031: 3.5-flash (qualidade/variação melhor, mantém BLOCK_NONE + JSON).
+    // Custo ~5-8x do 2.5-flash — ver ADR pra alavancas de escala (caching, etc).
+    model: 'gemini-3.5-flash',
     systemInstruction: SYSTEM_PROMPT_V3,
     safetySettings,
     generationConfig: {
