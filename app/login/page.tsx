@@ -64,7 +64,7 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-svh flex-col items-center justify-center overflow-hidden px-6 py-12">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm -translate-y-8">
         {/* Logo + glow radial brasa */}
         <div className="relative mb-9 text-center">
           <div
