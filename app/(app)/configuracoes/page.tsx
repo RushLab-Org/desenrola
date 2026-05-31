@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ReembolsoButton } from './reembolso-button';
+import { SenhaForm } from './senha-form';
 
 const STATUS_LABELS: Record<string, string> = {
   active: 'ativo',
@@ -97,6 +98,18 @@ export default async function ConfiguracoesPage() {
           ) : (
             <ReembolsoButton email={profile?.email ?? user.email ?? ''} />
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>senha de acesso</CardTitle>
+          <CardDescription>
+            define uma senha pra entrar com email e senha, sem precisar do link toda vez.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SenhaForm />
         </CardContent>
       </Card>
 

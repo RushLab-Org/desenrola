@@ -44,6 +44,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 026 | Entrada unificada (texto/print/áudio num bloco só) substitui as tabs do Marco 4 | Aceita | 2026-05-30 |
 | 027 | Calibração de geração: output literal (anti-meta) + few-shot de intensidade 4/5 + relationshipBoost por chamada | Aceita | 2026-05-30 |
 | 028 | Intenção "sexualizar" substitui "outros" na taxonomia de geração | Aceita | 2026-05-30 |
+| 029 | Login híbrido: magic link no 1º acesso + email/senha definida depois (evolui ADR-005) | Aceita | 2026-05-31 |
 
 ---
 
@@ -1381,3 +1382,46 @@ ALTER TABLE public.generations ADD CONSTRAINT generations_intent_check
 - Se "sexualizar" e "esquentar" na prática gerarem a mesma coisa (usuários não percebem diferença) → fundir ou redefinir
 - Se faltar um catch-all genérico que "responder_normal" não cubra → reavaliar reintroduzir algo como "outros"
 - Migration não rodada + uso de "sexualizar" em prod → gerações não persistem (lembrete operacional)
+
+---
+
+## ADR-029: Login híbrido — magic link no 1º acesso + email/senha nos seguintes
+
+**Data:** 2026-05-31
+**Status:** Aceita
+**Camada:** Autenticação
+
+**Relação com ADR-005:** evolui, não substitui. O magic link continua sendo o **1º acesso (pós-compra)** e o caminho de **recuperação ("esqueci a senha")**. ADR-005 permanece **Aceito**.
+
+**Contexto:**
+ADR-005 cravou magic link por causa do fluxo pós-compra (o webhook da Perfect Pay cria a conta com o email do pagamento, **sem senha**). Funciona, mas pra usuário recorrente é fricção real receber um link **toda vez** que vai entrar. O humano pediu login por email + senha.
+
+**Decisão:**
+Login **híbrido**:
+- **1º acesso e recuperação:** magic link (`signInWithOtp`), igual hoje — o usuário criado pelo webhook não tem senha, então entra pelo link.
+- **Definir senha:** em `/configuracoes`, o usuário autenticado define uma senha (`supabase.auth.updateUser({ password })`).
+- **Logins seguintes:** email + senha (`supabase.auth.signInWithPassword`).
+- **Tela de login:** modo **senha por padrão** + link "primeira vez ou esqueceu a senha? entra com link" que alterna pro modo magic link.
+
+**Implementação:**
+- `lib/schemas/login.ts` — `passwordLoginSchema` (email+senha), `setPasswordSchema` (min 8)
+- `app/login/actions.ts` — `signInWithPassword`
+- `app/login/page.tsx` — dois modos (senha / link) com toggle
+- `app/(app)/configuracoes/actions.ts` — `setPassword` (updateUser)
+- `app/(app)/configuracoes/senha-form.tsx` + card "senha de acesso" na page
+
+**Notas técnicas:**
+- Usuário do webhook **não tem senha** até definir uma → até lá usa magic link (fluxo do ADR-023 intacto)
+- Supabase "Confirm email OFF" (setup) já permite `signInWithPassword` sem confirmação
+- Senha setada no server action → cookie de sessão setado → client faz `window.location.assign('/')` pra o middleware enxergar
+- **Não precisa de migration** — senha vive em `auth.users` (gerenciado pelo Supabase), nada muda no schema público
+
+**Justificativa:**
+- Tira a fricção do recorrente sem quebrar o fluxo pós-compra (que depende de não ter senha no momento da criação)
+- Magic link como fallback cobre "esqueci a senha" sem precisar de fluxo de reset dedicado
+- Custo baixo, sem migration, sem mexer no webhook
+
+**Gatilho de reavaliação:**
+- Se quiserem OAuth (Google/Apple) → adicionar como 3º método
+- Se "definir senha" tiver baixa adesão → considerar setar senha no onboarding (Marco 6)
+- Se aparecer abuso de tentativa de senha → habilitar rate limit / lockout do Supabase Auth

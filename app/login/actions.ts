@@ -1,7 +1,12 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { loginSchema, type LoginInput } from '@/lib/schemas/login';
+import {
+  loginSchema,
+  passwordLoginSchema,
+  type LoginInput,
+  type PasswordLoginInput,
+} from '@/lib/schemas/login';
 import { requireEnv } from '@/lib/env';
 
 export type SignInResult = { ok: true } | { ok: false; error: string };
@@ -27,6 +32,27 @@ export async function signInWithEmail(input: LoginInput): Promise<SignInResult> 
       ok: false,
       error: 'não consegui mandar o link agora. tenta de novo daqui um pouco.',
     };
+  }
+
+  return { ok: true };
+}
+
+export async function signInWithPassword(
+  input: PasswordLoginInput,
+): Promise<SignInResult> {
+  const parsed = passwordLoginSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'dados inválidos' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
+
+  if (error) {
+    return { ok: false, error: 'email ou senha incorretos.' };
   }
 
   return { ok: true };

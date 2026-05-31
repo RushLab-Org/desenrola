@@ -15,21 +15,41 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { loginSchema, type LoginInput } from '@/lib/schemas/login';
-import { signInWithEmail } from './actions';
+import {
+  loginSchema,
+  passwordLoginSchema,
+  type LoginInput,
+  type PasswordLoginInput,
+} from '@/lib/schemas/login';
+import { signInWithEmail, signInWithPassword } from './actions';
 
 // TODO design: layout/cores/spacing visuais (definir com humano)
-// Este componente está com tom adulto da skill produto-dopaminergico mas
-// SEM customização visual de marca. Estrutura funcional para teste do fluxo.
+// Auth: senha por padrão; magic link como 1º acesso pós-compra / "esqueci a senha" (ADR-029).
 export default function LoginPage() {
+  const [mode, setMode] = useState<'password' | 'magic'>('password');
   const [sent, setSent] = useState(false);
 
-  const form = useForm<LoginInput>({
+  const passwordForm = useForm<PasswordLoginInput>({
+    resolver: zodResolver(passwordLoginSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  const magicForm = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '' },
   });
 
-  async function onSubmit(input: LoginInput) {
+  async function onPasswordSubmit(input: PasswordLoginInput) {
+    const result = await signInWithPassword(input);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    // sessão setada via cookie no server action; reload garante o middleware ver
+    window.location.assign('/');
+  }
+
+  async function onMagicSubmit(input: LoginInput) {
     const result = await signInWithEmail(input);
     if (!result.ok) {
       toast.error(result.error);
@@ -46,29 +66,31 @@ export default function LoginPage() {
           <CardDescription>
             {sent
               ? 'olha tua caixa de entrada. o link tá lá.'
-              : 'manda teu email. te mando o link.'}
+              : mode === 'password'
+                ? 'entra com teu email e senha.'
+                : 'manda teu email. te mando o link pra entrar.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {sent ? (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               <p>se não chegar em 1 minuto, olha o spam.</p>
               <Button
                 variant="link"
                 className="mt-2 h-auto p-0"
                 onClick={() => {
                   setSent(false);
-                  form.reset();
+                  magicForm.reset();
                 }}
               >
-                mandar pra outro email
+                voltar
               </Button>
             </div>
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          ) : mode === 'password' ? (
+            <Form {...passwordForm}>
+              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
                 <FormField
-                  control={form.control}
+                  control={passwordForm.control}
                   name="email"
                   render={({ field }) => (
                     <FormItem>
@@ -86,11 +108,78 @@ export default function LoginPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'mandando...' : 'mandar link'}
+                <FormField
+                  control={passwordForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>senha</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          autoComplete="current-password"
+                          placeholder="tua senha"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={passwordForm.formState.isSubmitting}
+                >
+                  {passwordForm.formState.isSubmitting ? 'entrando...' : 'entrar'}
                 </Button>
               </form>
             </Form>
+          ) : (
+            <Form {...magicForm}>
+              <form onSubmit={magicForm.handleSubmit(onMagicSubmit)} className="space-y-4">
+                <FormField
+                  control={magicForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          inputMode="email"
+                          autoComplete="email"
+                          placeholder="voce@exemplo.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={magicForm.formState.isSubmitting}
+                >
+                  {magicForm.formState.isSubmitting ? 'mandando...' : 'mandar link'}
+                </Button>
+              </form>
+            </Form>
+          )}
+
+          {!sent && (
+            <div className="mt-4 text-center">
+              <Button
+                variant="link"
+                className="text-muted-foreground h-auto p-0 text-xs"
+                onClick={() => setMode(mode === 'password' ? 'magic' : 'password')}
+              >
+                {mode === 'password'
+                  ? 'primeira vez ou esqueceu a senha? entra com link'
+                  : 'já tenho senha — entrar com email e senha'}
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
