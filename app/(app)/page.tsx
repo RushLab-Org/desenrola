@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { buttonVariants } from '@/components/ui/button';
@@ -22,6 +23,9 @@ export default async function HomePage() {
     .single();
 
   const onboardingDone = profile?.onboarding_completed ?? false;
+
+  // 1º acesso: manda pro fluxo guiado (ADR-032)
+  if (!onboardingDone) redirect('/onboarding');
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-12">

@@ -47,6 +47,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 029 | Login híbrido: magic link no 1º acesso + email/senha definida depois (evolui ADR-005) | Aceita | 2026-05-31 |
 | 030 | Vitória por opção (🔥) + coleta pro aprendizado macro pós-MVP (injeção per-user segue grosseira) | Aceita | 2026-05-31 |
 | 031 | Modelo de geração: Gemini 3.5 Flash substitui 2.5 Flash (qualidade/variação; custo ~5-8x, mitigável) | Aceita | 2026-05-31 |
+| 032 | Onboarding guiado em 5 telas (Marco 6); onboarding_completed marcado ao salvar perfil | Aceita | 2026-05-31 |
 
 ---
 
@@ -1523,3 +1524,42 @@ Trocar o modelo de `gemini-2.5-flash` → `gemini-3.5-flash` em `lib/gemini.ts` 
 - Custo médio por venda/assinante exceder o orçamento de margem → aplicar alavancas 1-4 OU voltar pro híbrido/2.5
 - Latência do thinking incomodar usuário → cap de thinking ou voltar 2.5
 - Migração pra assinatura → reavaliar limite diário + plano vs custo de inferência (ver discussão de unit economics)
+
+---
+
+## ADR-032: Onboarding guiado em 5 telas (Marco 6)
+
+**Data:** 2026-05-31
+**Status:** Aceita
+**Camada:** Produto — UX / Onboarding
+
+**Contexto:**
+O ROADMAP (Marco 6) previa onboarding em **6 telas**. Decisão: **5 telas** — duas do roadmap (perfil básico + situação) viram uma só, porque são chips rápidos e menos passos = mais gente termina (a skill `produto-dopaminergico` prioriza WOW em 60s, fricção mínima). Antes disso, o 1º acesso caía numa home sem graça apontando pro /perfil.
+
+**Decisão — as 5 telas (rota `/onboarding`):**
+1. **bora te conhecer** — idade, situação relacional, tempo solteiro (condicional), voltando ao mercado, filhos.
+2. **o que quer melhorar** — áreas (multi) + objetivo. Ao concluir, **salva o perfil**.
+3. **tua primeira crush** — nome, tipo de relação, idade (opcional), contexto. Cria a crush.
+4. **cola algo que ela mandou** — mensagem + intensidade + intenção, com botão "usar um exemplo" pra quem não tem caso real.
+5. **demonstração ao vivo** — chama a geração e mostra as 3 opções (reusa o componente `Resultado`) + "tá calibrada. esse é teu app." → botão "entrar no app".
+
+**Reúso (sem duplicar lógica):** `updateUserProfile` (perfil), `createCrush` (crush), `gerarResposta` (demo), `Resultado` (render). O wizard é um Client Component com estado por passo (sem react-hook-form, pra evitar os pitfalls de form/base-ui).
+
+**Decisão-chave — quando marcar `onboarding_completed`:**
+Marcado **`true` ao salvar o perfil (passo 2)**, NÃO no fim. Motivo: a demonstração do passo 5 chama `gerarResposta`, que **exige perfil calibrado** (`onboarding_completed`). Se marcasse só no fim, a demo seria recusada. Ter **perfil sem crush é um estado válido e usável** (o app trata "sem crush" com empty state), então não fica "meio quebrado" se o cara abandonar entre os passos 2 e 5.
+
+**Roteamento (gating):**
+- Home (`/`): se `!onboarding_completed` → `redirect('/onboarding')`.
+- `/onboarding`: se `onboarding_completed` → `redirect('/')` (evita reonboarding).
+- `/gerar`: se `!onboarding_completed` → `redirect('/onboarding')` (antes ia pro /perfil).
+- Sem loop: flag false manda pro onboarding; flag true tira de lá.
+- Edge case aceito: se o cara der **refresh no meio do wizard** (após o passo 2, flag já true), o guard manda ele pro app — que é usável (calibrado, cria crush e gera normal). Não finaliza a demo guiada, mas não quebra.
+
+**Visual:** cru/funcional (mesmo estilo do resto). A passada de design entra depois (o humano tá produzindo a direção visual).
+
+**Validação:** `npx tsc --noEmit` OK, `npx eslint` limpo, `npm run build` verde (rota `/onboarding` gerada). Sem migration (usa tabelas/colunas existentes).
+
+**Gatilho de reavaliação:**
+- Refresh-no-meio gerar crush duplicada incomodar → persistir step do wizard (localStorage) ou guardar progresso no banco
+- Métrica de conclusão baixa → cortar/fundir passos ou mover captura pro próprio uso
+- Passada de design → reestilizar as 5 telas junto com o resto

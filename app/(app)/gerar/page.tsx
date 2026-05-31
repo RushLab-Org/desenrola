@@ -17,7 +17,7 @@ export default async function GerarPage() {
     .single();
 
   if (!profile?.onboarding_completed) {
-    redirect('/perfil');
+    redirect('/onboarding');
   }
 
   const { data: crushes } = await supabase
