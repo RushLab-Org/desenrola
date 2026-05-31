@@ -573,6 +573,7 @@ export function GerarForm({
           data={result.data}
           crushId={result.crushId}
           generationId={result.generationId}
+          onRegenerate={() => onSubmit(form.getValues())}
         />
       )}
     </div>

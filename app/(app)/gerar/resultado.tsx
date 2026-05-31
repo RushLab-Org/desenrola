@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Check, Copy, Flame, Sparkles } from 'lucide-react';
+import { Check, Copy, Flame, RefreshCw, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,10 +14,12 @@ export function Resultado({
   data,
   crushId,
   generationId,
+  onRegenerate,
 }: {
   data: GeracaoOutput;
   crushId: string;
   generationId: string;
+  onRegenerate?: () => void;
 }) {
   // ADR-030: like por opção — qual das 3 funcionou. Marcado na tela do resultado.
   const [likedIndex, setLikedIndex] = useState<number | null>(null);
@@ -58,6 +60,22 @@ export function Resultado({
         </CardHeader>
         <CardContent className="text-sm">{data.leitura}</CardContent>
       </Card>
+
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground text-[10px] font-medium tracking-[0.15em] uppercase">
+          3 opções calibradas
+        </span>
+        {onRegenerate && (
+          <button
+            type="button"
+            onClick={onRegenerate}
+            className="text-primary inline-flex items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80"
+          >
+            <RefreshCw className="size-3.5" />
+            gerar novamente
+          </button>
+        )}
+      </div>
 
       {data.opcoes.map((opcao, i) => (
         <OpcaoCard
