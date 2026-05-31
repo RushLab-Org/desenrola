@@ -545,7 +545,11 @@ export function GerarForm({
             )}
           />
 
-          <Button type="submit" disabled={pending} className="w-full">
+          <Button
+            type="submit"
+            disabled={pending}
+            className="h-12 w-full rounded-full shadow-[0_0_20px_-1px_rgba(160,24,42,0.55)]"
+          >
             <Sparkles className="size-4" />
             {pending ? 'gerando...' : 'gerar 3 opções'}
           </Button>
