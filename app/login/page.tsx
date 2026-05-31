@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,47 +16,54 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  loginSchema,
-  passwordLoginSchema,
-  type LoginInput,
-  type PasswordLoginInput,
-} from '@/lib/schemas/login';
 import { signInWithEmail, signInWithPassword } from './actions';
 
+// Um único form (email + senha). O modo só controla se o campo de senha aparece
+// e qual ação roda no submit — evita o bug de trocar de FormProvider na mesma
+// posição (que quebrava o onChange do input). Auth: ADR-029.
+const loginFormSchema = z.object({
+  email: z.email('email inválido'),
+  password: z.string().optional(),
+});
+
+type LoginFormValues = z.infer<typeof loginFormSchema>;
+
 // TODO design: layout/cores/spacing visuais (definir com humano)
-// Auth: senha por padrão; magic link como 1º acesso pós-compra / "esqueci a senha" (ADR-029).
 export default function LoginPage() {
   const [mode, setMode] = useState<'password' | 'magic'>('password');
   const [sent, setSent] = useState(false);
 
-  const passwordForm = useForm<PasswordLoginInput>({
-    resolver: zodResolver(passwordLoginSchema),
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
     defaultValues: { email: '', password: '' },
   });
 
-  const magicForm = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '' },
-  });
+  async function onSubmit(values: LoginFormValues) {
+    if (mode === 'magic') {
+      const result = await signInWithEmail({ email: values.email });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setSent(true);
+      return;
+    }
 
-  async function onPasswordSubmit(input: PasswordLoginInput) {
-    const result = await signInWithPassword(input);
+    if (!values.password) {
+      form.setError('password', { message: 'digita tua senha' });
+      return;
+    }
+
+    const result = await signInWithPassword({
+      email: values.email,
+      password: values.password,
+    });
     if (!result.ok) {
       toast.error(result.error);
       return;
     }
     // sessão setada via cookie no server action; reload garante o middleware ver
     window.location.assign('/');
-  }
-
-  async function onMagicSubmit(input: LoginInput) {
-    const result = await signInWithEmail(input);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-    setSent(true);
   }
 
   return (
@@ -80,66 +88,17 @@ export default function LoginPage() {
                 className="mt-2 h-auto p-0"
                 onClick={() => {
                   setSent(false);
-                  magicForm.reset();
+                  form.reset();
                 }}
               >
                 voltar
               </Button>
             </div>
-          ) : mode === 'password' ? (
-            <Form {...passwordForm}>
-              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-                <FormField
-                  control={passwordForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          inputMode="email"
-                          autoComplete="email"
-                          placeholder="voce@exemplo.com"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={passwordForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>senha</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          autoComplete="current-password"
-                          placeholder="tua senha"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={passwordForm.formState.isSubmitting}
-                >
-                  {passwordForm.formState.isSubmitting ? 'entrando...' : 'entrar'}
-                </Button>
-              </form>
-            </Form>
           ) : (
-            <Form {...magicForm}>
-              <form onSubmit={magicForm.handleSubmit(onMagicSubmit)} className="space-y-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
-                  control={magicForm.control}
+                  control={form.control}
                   name="email"
                   render={({ field }) => (
                     <FormItem>
@@ -157,12 +116,36 @@ export default function LoginPage() {
                     </FormItem>
                   )}
                 />
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={magicForm.formState.isSubmitting}
-                >
-                  {magicForm.formState.isSubmitting ? 'mandando...' : 'mandar link'}
+
+                {mode === 'password' && (
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>senha</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            autoComplete="current-password"
+                            placeholder="tua senha"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting
+                    ? mode === 'password'
+                      ? 'entrando...'
+                      : 'mandando...'
+                    : mode === 'password'
+                      ? 'entrar'
+                      : 'mandar link'}
                 </Button>
               </form>
             </Form>
@@ -171,9 +154,13 @@ export default function LoginPage() {
           {!sent && (
             <div className="mt-4 text-center">
               <Button
+                type="button"
                 variant="link"
                 className="text-muted-foreground h-auto p-0 text-xs"
-                onClick={() => setMode(mode === 'password' ? 'magic' : 'password')}
+                onClick={() => {
+                  setMode(mode === 'password' ? 'magic' : 'password');
+                  form.clearErrors();
+                }}
               >
                 {mode === 'password'
                   ? 'primeira vez ou esqueceu a senha? entra com link'
