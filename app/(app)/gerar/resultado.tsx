@@ -62,7 +62,6 @@ export function Resultado({
       {data.opcoes.map((opcao, i) => (
         <OpcaoCard
           key={i}
-          index={i + 1}
           texto={opcao.texto}
           tom={opcao.tom}
           liked={likedIndex === i}
@@ -96,14 +95,12 @@ export function Resultado({
 }
 
 function OpcaoCard({
-  index,
   texto,
   tom,
   liked,
   canLike,
   onLike,
 }: {
-  index: number;
   texto: string;
   tom: string;
   liked: boolean;
@@ -123,33 +120,32 @@ function OpcaoCard({
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
-        <div>
-          <CardTitle className="text-sm font-medium">opção {index}</CardTitle>
-          <p className="text-muted-foreground mt-1 text-xs">{tom}</p>
-        </div>
-        <div className="flex items-center gap-1">
-          {canLike && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onLike}
-              title="essa funcionou?"
-              aria-label={liked ? 'desmarcar que funcionou' : 'marcar que funcionou'}
-              className={liked ? 'text-orange-500' : 'text-muted-foreground'}
-            >
-              <Flame className={liked ? 'size-4 fill-current' : 'size-4'} />
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" onClick={copiar}>
-            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-            {copied ? 'copiado' : 'copiar'}
-          </Button>
-        </div>
+    <Card className="border-l-2 border-l-primary">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-0">
+        <span className="text-primary text-[10px] font-medium tracking-[0.15em] uppercase">
+          {tom}
+        </span>
+        {canLike && (
+          <button
+            type="button"
+            onClick={onLike}
+            title="essa funcionou?"
+            aria-label={liked ? 'desmarcar que funcionou' : 'marcar que funcionou'}
+            className={
+              'transition-colors ' +
+              (liked ? 'text-primary' : 'text-muted-foreground hover:text-foreground')
+            }
+          >
+            <Flame className={liked ? 'size-4 fill-current' : 'size-4'} />
+          </button>
+        )}
       </CardHeader>
-      <CardContent>
-        <p className="whitespace-pre-wrap text-sm">{texto}</p>
+      <CardContent className="space-y-3">
+        <p className="text-sm leading-relaxed whitespace-pre-wrap">{texto}</p>
+        <Button variant="outline" size="sm" onClick={copiar} className="w-full">
+          {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+          {copied ? 'copiado' : 'copiar'}
+        </Button>
       </CardContent>
     </Card>
   );

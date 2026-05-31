@@ -513,7 +513,7 @@ export function GerarForm({
                         className={
                           'rounded-full border px-3 py-1 text-sm transition-colors ' +
                           (active
-                            ? 'border-foreground bg-foreground text-background'
+                            ? 'border-primary bg-primary text-primary-foreground'
                             : 'border-border hover:border-foreground/30')
                         }
                       >
