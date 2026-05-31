@@ -6,7 +6,7 @@ import { Check, Copy, Flame, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { GeracaoOutput } from '@/lib/schemas/geracao';
+import { intentOptions, type GeracaoOutput } from '@/lib/schemas/geracao';
 import { adicionarInfoNaCrush, marcarOpcaoVitoria } from './actions';
 
 // TODO design: visual do resultado (definir com humano via Claude Design)
@@ -22,6 +22,12 @@ export function Resultado({
   // ADR-030: like por opção — qual das 3 funcionou. Marcado na tela do resultado.
   const [likedIndex, setLikedIndex] = useState<number | null>(null);
   const [, startTransition] = useTransition();
+
+  // Fix determinístico: o modelo às vezes coloca uma INTENÇÃO (ex: "sexualizar")
+  // em skills_aplicadas mesmo o prompt proibindo. Filtra aqui pra nunca vazar.
+  const skillsLimpas = data.skills_aplicadas.filter(
+    (s) => !(intentOptions as readonly string[]).includes(s),
+  );
 
   function handleLike(i: number) {
     const prev = likedIndex;
@@ -65,7 +71,7 @@ export function Resultado({
         />
       ))}
 
-      {data.skills_aplicadas.length > 0 && (
+      {skillsLimpas.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">
@@ -73,7 +79,7 @@ export function Resultado({
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            {data.skills_aplicadas.map((skill) => (
+            {skillsLimpas.map((skill) => (
               <Badge key={skill} variant="secondary">
                 {skill.replace(/_/g, ' ')}
               </Badge>
