@@ -63,10 +63,15 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center px-6 py-12">
+    <main className="flex min-h-svh flex-col items-center justify-center overflow-hidden px-6 py-12">
       <div className="w-full max-w-sm">
-        <div className="mb-10 text-center">
-          <h1 className="font-serif text-[2.6rem] leading-none font-medium tracking-tight">
+        {/* Logo + glow radial brasa */}
+        <div className="relative mb-9 text-center">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-44 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(160,24,42,0.5)_0%,rgba(160,24,42,0)_70%)] blur-2xl"
+          />
+          <h1 className="font-serif text-[2.7rem] leading-none font-medium tracking-tight">
             Sacada
           </h1>
           <p className="text-primary mt-3 text-[11px] font-medium tracking-[0.25em] uppercase">
@@ -105,7 +110,8 @@ export default function LoginPage() {
                         type="email"
                         inputMode="email"
                         autoComplete="email"
-                        placeholder="voce@exemplo.com"
+                        placeholder="você@exemplo.com"
+                        className="h-11"
                         {...field}
                       />
                     </FormControl>
@@ -128,6 +134,7 @@ export default function LoginPage() {
                           type="password"
                           autoComplete="current-password"
                           placeholder="tua senha"
+                          className="h-11"
                           {...field}
                         />
                       </FormControl>
@@ -139,7 +146,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="mt-2 h-12 w-full"
+                className="mt-2 h-12 w-full rounded-full shadow-[0_4px_24px_-2px_rgba(160,24,42,0.6)]"
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting
@@ -155,13 +162,13 @@ export default function LoginPage() {
         )}
 
         {!sent && (
-          <div className="mt-5 text-center text-sm">
+          <div className="mt-6 text-center text-sm">
             {mode === 'password' ? (
               <>
                 <p className="text-muted-foreground">primeira vez ou esqueceu a senha?</p>
                 <Button
                   variant="link"
-                  className="text-primary h-auto p-0"
+                  className="text-primary h-auto p-0 font-medium"
                   onClick={() => {
                     setMode('magic');
                     form.clearErrors();
@@ -173,7 +180,7 @@ export default function LoginPage() {
             ) : (
               <Button
                 variant="link"
-                className="text-primary h-auto p-0"
+                className="text-primary h-auto p-0 font-medium"
                 onClick={() => {
                   setMode('password');
                   form.clearErrors();
@@ -184,11 +191,11 @@ export default function LoginPage() {
             )}
           </div>
         )}
-      </div>
 
-      <p className="text-muted-foreground mt-auto pt-10 text-[10px] tracking-[0.2em] uppercase">
-        conversas adultas · uso individual
-      </p>
+        <p className="text-muted-foreground mt-10 text-center text-[10px] tracking-[0.2em] uppercase">
+          conversas adultas · uso individual
+        </p>
+      </div>
     </main>
   );
 }
