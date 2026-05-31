@@ -26,7 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 href="/crushes"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                crushes
+                mulheres
               </Link>
               <Link
                 href="/perfil"

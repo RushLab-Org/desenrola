@@ -339,7 +339,7 @@ export function OnboardingWizard() {
       {step === 3 && (
         <Card>
           <CardHeader>
-            <CardTitle>tua primeira crush</CardTitle>
+            <CardTitle>tua primeira mulher</CardTitle>
             <CardDescription>
               cada uma tem um perfil próprio. quanto mais contexto, melhor a IA calibra.
             </CardDescription>

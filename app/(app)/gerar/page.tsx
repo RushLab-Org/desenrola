@@ -38,12 +38,12 @@ export default async function GerarPage() {
       {!crushes || crushes.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <p className="text-base">precisa de pelo menos uma crush cadastrada.</p>
+            <p className="text-base">precisa de pelo menos uma mulher cadastrada.</p>
             <p className="text-muted-foreground text-sm">
               cada uma tem perfil próprio. quanto mais contexto, melhor a IA calibra.
             </p>
             <Link href="/crushes" className={buttonVariants()}>
-              ir pras crushes
+              ir pras mulheres
             </Link>
           </CardContent>
         </Card>

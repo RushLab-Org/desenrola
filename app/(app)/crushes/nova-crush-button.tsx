@@ -69,7 +69,7 @@ export function NovaCrushButton({
       toast.error(result.error);
       return;
     }
-    toast.success('crush adicionada.');
+    toast.success('mulher adicionada.');
     setOpen(false);
     form.reset();
     router.push(`/crushes/${result.id}`);
@@ -83,12 +83,12 @@ export function NovaCrushButton({
         onClick={() => setOpen(true)}
       >
         <Plus className="size-4" />
-        {label ?? 'nova crush'}
+        {label ?? 'nova mulher'}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>nova crush</DialogTitle>
+          <DialogTitle>nova mulher</DialogTitle>
           <DialogDescription>
             quanto mais contexto, melhor a IA calibra. dá pra adicionar mais depois.
           </DialogDescription>

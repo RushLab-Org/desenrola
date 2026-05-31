@@ -117,7 +117,7 @@ export default async function ConfiguracoesPage() {
         <CardHeader>
           <CardTitle>excluir conta</CardTitle>
           <CardDescription>
-            apaga teu perfil, crushes, histórico de gerações. não tem como desfazer.
+            apaga teu perfil, tuas mulheres, histórico de gerações. não tem como desfazer.
           </CardDescription>
         </CardHeader>
         <CardContent>

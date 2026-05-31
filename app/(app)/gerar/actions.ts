@@ -75,7 +75,7 @@ export async function gerarResposta(input: GeracaoInput): Promise<GerarResult> {
     .single();
 
   if (!crush) {
-    return { ok: false, error: 'crush não encontrada.' };
+    return { ok: false, error: 'mulher não encontrada.' };
   }
 
   // Few-shot por user (Task #35)
@@ -172,7 +172,7 @@ export async function adicionarInfoNaCrush(
   if (newContext.length > 5000) {
     return {
       ok: false,
-      error: 'contexto da crush tá cheio. dá uma limpada em /crushes primeiro.',
+      error: 'o contexto dela tá cheio. limpa um pouco antes de gerar de novo.',
     };
   }
 
@@ -234,7 +234,7 @@ async function preparaContextoGeracao(input: GeracaoMidiaInput) {
     .eq('user_id', user.id)
     .single();
 
-  if (!crush) return { kind: 'error' as const, error: 'crush não encontrada.' };
+  if (!crush) return { kind: 'error' as const, error: 'mulher não encontrada.' };
 
   return { kind: 'ok' as const, user, supabase, profile, crush };
 }
