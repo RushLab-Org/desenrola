@@ -441,16 +441,27 @@ export async function gerarRespostaAudio(
 
 export type MarkWinResult = { ok: true } | { ok: false; error: string };
 
-export async function marcarComoVitoria(
+// ADR-030: like por opção. optionIndex 0-2 = qual das 3 funcionou; null = desmarca.
+// marked_as_win acompanha (true se alguma venceu) pra manter o few-shot (ADR-024)
+// coeso — a injeção per-user continua grosseira de propósito (sem enviesar).
+// winning_option_index é coletado pro aprendizado MACRO (pós-MVP), não pra micro.
+export async function marcarOpcaoVitoria(
   generationId: string,
-  win: boolean,
+  optionIndex: number | null,
 ): Promise<MarkWinResult> {
+  if (optionIndex !== null && (optionIndex < 0 || optionIndex > 2)) {
+    return { ok: false, error: 'opção inválida.' };
+  }
+
   const user = await requireUser();
   const supabase = await createClient();
 
   const { error } = await supabase
     .from('generations')
-    .update({ marked_as_win: win })
+    .update({
+      winning_option_index: optionIndex,
+      marked_as_win: optionIndex !== null,
+    })
     .eq('id', generationId)
     .eq('user_id', user.id);
 

@@ -45,6 +45,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 027 | Calibração de geração: output literal (anti-meta) + few-shot de intensidade 4/5 + relationshipBoost por chamada | Aceita | 2026-05-30 |
 | 028 | Intenção "sexualizar" substitui "outros" na taxonomia de geração | Aceita | 2026-05-30 |
 | 029 | Login híbrido: magic link no 1º acesso + email/senha definida depois (evolui ADR-005) | Aceita | 2026-05-31 |
+| 030 | Vitória por opção (🔥) + coleta pro aprendizado macro pós-MVP (injeção per-user segue grosseira) | Aceita | 2026-05-31 |
 
 ---
 
@@ -1425,3 +1426,61 @@ Login **híbrido**:
 - Se quiserem OAuth (Google/Apple) → adicionar como 3º método
 - Se "definir senha" tiver baixa adesão → considerar setar senha no onboarding (Marco 6)
 - Se aparecer abuso de tentativa de senha → habilitar rate limit / lockout do Supabase Auth
+
+---
+
+## ADR-030: Vitória por opção (🔥) + coleta pro aprendizado macro pós-MVP
+
+**Data:** 2026-05-31
+**Status:** Aceita
+**Camada:** Produto — IA / Feedback / Schema
+
+**Relação com ADR-024:** evolui a coleta de feedback. O few-shot **per-user** do ADR-024 continua **grosseiro de propósito** (injeta gerações inteiras marcadas, não a opção específica) — isso NÃO muda. ADR-024 permanece Aceito.
+
+**Contexto:**
+O "essa funcionou?" era um booleano **por geração** (não dizia qual das 3 opções funcionou). O humano propôs um **like por opção** (🔥 no canto de cada resposta): o cara envia a mensagem, e se funcionou com aquela mulher (dado o perfil/estereótipo dela + a mensagem que ela mandou), ele marca aquela opção específica.
+
+Surgiu a tensão (levantada pelo próprio humano): isso não enviesaria a IA a repetir as mesmas respostas? **Resolução do humano:** manter o aprendizado num **contexto MACRO**, não micro.
+
+**Distinção micro × macro (o que destrava a tensão):**
+- **Micro (enviesa):** pegar as vitórias do próprio usuário e reinjetar as linhas dele em toda geração dele → repetição. Por isso o per-user fica grosseiro (ADR-024 inalterado).
+- **Macro (não enviesa):** agregar os 🔥 da base por **tipo/estereótipo de mulher** e destilar **padrões** (não frases). Calibra o *jeito* da IA sem forçar repetição e é privacy-safe se anonimizado/agregado.
+
+**Decisão:**
+Separar **coletar** de **aprender**:
+
+1. **Agora (MVP, barato):**
+   - **UI:** like 🔥 por opção em `resultado.tsx` (substitui o "essa funcionou?" único do rodapé). Marca qual das 3 funcionou.
+   - **Dado:** coluna `generations.winning_option_index SMALLINT (0-2, NULL=nenhuma)`. O contexto (tipo da crush, mensagem dela, intensidade, intenção) já está ligado via `crush_id`/geração. `marked_as_win` acompanha (true se alguma venceu) pra manter o few-shot do ADR-024 funcionando sem mudança.
+   - Action `marcarOpcaoVitoria(generationId, optionIndex|null)` (substitui `marcarComoVitoria`).
+   - **Não liga o motor macro** — só acumula o dataset.
+
+2. **Depois (pós-MVP):** motor de aprendizado **macro/coletivo** por tipo de mulher — agrega, anonimiza, destila padrões, dobra no system prompt/calibração. É a opção C do ADR-024 (LGPD-heavy), confirmada como pós-MVP. Construção só com aprovação explícita (regra do CLAUDE.md).
+
+**Implementação:**
+- `schema.sql` — coluna `winning_option_index` (migration manual)
+- `app/(app)/gerar/actions.ts` — `marcarOpcaoVitoria`
+- `app/(app)/gerar/resultado.tsx` — 🔥 por opção (otimista, toggle), remove o card "essa funcionou?" do rodapé
+
+**Migration manual necessária (humano roda no Supabase SQL Editor):**
+
+\`\`\`sql
+ALTER TABLE public.generations
+  ADD COLUMN winning_option_index SMALLINT
+  CHECK (winning_option_index BETWEEN 0 AND 2);
+\`\`\`
+
+Linhas existentes ficam com NULL (passam no CHECK). Sem a migration, o like retorna erro ("não consegui marcar") — rodar antes de usar.
+
+**Limitação conhecida (honestidade):**
+O like é marcado **na tela do resultado**. A visão completa do humano ("marcar depois que ela reagiu de verdade") precisa de **histórico rolante** (pós-MVP no CLAUDE.md). Por ora, o cara marca a que vai usar / acha que funcionou ali mesmo — mesma limitação do "essa funcionou?" anterior, só que por opção.
+
+**Justificativa:**
+- Coletar é barato e de alto valor (constrói o dataset do macro); aprender macro é caro/LGPD → adiar é MVP-correto
+- Resolve a tensão do viés: per-user fica grosseiro, macro destila padrão (não repete linha)
+- Dado por-opção é muito mais rico que o booleano por-geração pro futuro
+
+**Gatilho de reavaliação:**
+- Volume de 🔥 suficiente + oferta validada → construir o motor macro (com pipeline de anonimização/LGPD)
+- Se quiserem feedback "depois da reação dela" → construir histórico rolante por crush (pós-MVP)
+- Se o macro provar que certos padrões funcionam muito → dobrar no system prompt como calibração fixa

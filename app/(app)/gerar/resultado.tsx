@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Check, Copy, Sparkles, ThumbsUp } from 'lucide-react';
+import { Check, Copy, Flame, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { GeracaoOutput } from '@/lib/schemas/geracao';
-import { adicionarInfoNaCrush, marcarComoVitoria } from './actions';
+import { adicionarInfoNaCrush, marcarOpcaoVitoria } from './actions';
 
 // TODO design: visual do resultado (definir com humano via Claude Design)
 export function Resultado({
@@ -19,6 +19,25 @@ export function Resultado({
   crushId: string;
   generationId: string;
 }) {
+  // ADR-030: like por opção — qual das 3 funcionou. Marcado na tela do resultado.
+  const [likedIndex, setLikedIndex] = useState<number | null>(null);
+  const [, startTransition] = useTransition();
+
+  function handleLike(i: number) {
+    const prev = likedIndex;
+    const next = likedIndex === i ? null : i;
+    setLikedIndex(next); // otimista
+    startTransition(async () => {
+      const r = await marcarOpcaoVitoria(generationId, next);
+      if (!r.ok) {
+        toast.error(r.error);
+        setLikedIndex(prev); // reverte
+      } else if (next !== null) {
+        toast.success('massa. anotado que essa funcionou.');
+      }
+    });
+  }
+
   return (
     <div className="space-y-4">
       {data.alerta && (
@@ -35,7 +54,15 @@ export function Resultado({
       </Card>
 
       {data.opcoes.map((opcao, i) => (
-        <OpcaoCard key={i} index={i + 1} texto={opcao.texto} tom={opcao.tom} />
+        <OpcaoCard
+          key={i}
+          index={i + 1}
+          texto={opcao.texto}
+          tom={opcao.tom}
+          liked={likedIndex === i}
+          canLike={!!generationId}
+          onLike={() => handleLike(i)}
+        />
       ))}
 
       {data.skills_aplicadas.length > 0 && (
@@ -58,13 +85,25 @@ export function Resultado({
       {data.info_nova_detectada && (
         <InfoNovaCard info={data.info_nova_detectada} crushId={crushId} />
       )}
-
-      {generationId && <MarcarVitoriaCard generationId={generationId} />}
     </div>
   );
 }
 
-function OpcaoCard({ index, texto, tom }: { index: number; texto: string; tom: string }) {
+function OpcaoCard({
+  index,
+  texto,
+  tom,
+  liked,
+  canLike,
+  onLike,
+}: {
+  index: number;
+  texto: string;
+  tom: string;
+  liked: boolean;
+  canLike: boolean;
+  onLike: () => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copiar() {
@@ -84,10 +123,24 @@ function OpcaoCard({ index, texto, tom }: { index: number; texto: string; tom: s
           <CardTitle className="text-sm font-medium">opção {index}</CardTitle>
           <p className="text-muted-foreground mt-1 text-xs">{tom}</p>
         </div>
-        <Button variant="ghost" size="sm" onClick={copiar}>
-          {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-          {copied ? 'copiado' : 'copiar'}
-        </Button>
+        <div className="flex items-center gap-1">
+          {canLike && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onLike}
+              title="essa funcionou?"
+              aria-label={liked ? 'desmarcar que funcionou' : 'marcar que funcionou'}
+              className={liked ? 'text-orange-500' : 'text-muted-foreground'}
+            >
+              <Flame className={liked ? 'size-4 fill-current' : 'size-4'} />
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={copiar}>
+            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+            {copied ? 'copiado' : 'copiar'}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <p className="whitespace-pre-wrap text-sm">{texto}</p>
@@ -127,30 +180,5 @@ function InfoNovaCard({ info, crushId }: { info: string; crushId: string }) {
         </Button>
       </CardContent>
     </Card>
-  );
-}
-
-function MarcarVitoriaCard({ generationId }: { generationId: string }) {
-  const [marked, setMarked] = useState(false);
-  const [pending, startTransition] = useTransition();
-
-  function marcar() {
-    startTransition(async () => {
-      const result = await marcarComoVitoria(generationId, !marked);
-      if (result.ok) {
-        setMarked(!marked);
-      } else {
-        toast.error(result.error);
-      }
-    });
-  }
-
-  return (
-    <div className="flex justify-center pt-2">
-      <Button onClick={marcar} variant={marked ? 'secondary' : 'ghost'} size="sm" disabled={pending}>
-        <ThumbsUp className="size-4" />
-        {marked ? 'marcada como vitória' : 'essa funcionou?'}
-      </Button>
-    </div>
   );
 }

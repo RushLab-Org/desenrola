@@ -134,7 +134,8 @@ CREATE TABLE public.generations (
   info_detected TEXT,               -- info nova detectada (se houve)
   
   -- Metadata
-  marked_as_win BOOLEAN NOT NULL DEFAULT FALSE,  -- usuário marca que essa resposta funcionou
+  marked_as_win BOOLEAN NOT NULL DEFAULT FALSE,  -- usuário marca que a geração funcionou (mantido pro few-shot ADR-024)
+  winning_option_index SMALLINT CHECK (winning_option_index BETWEEN 0 AND 2),  -- ADR-030: qual das 3 opções funcionou (0-2); NULL = nenhuma marcada
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
