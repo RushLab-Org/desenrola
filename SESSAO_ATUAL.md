@@ -31,7 +31,7 @@ Tudo commitado e no ar. ADRs novos: 026 a 034.
 - **Modelo Gemini 3.5 Flash (ADR-031):** substitui o 2.5 Flash (mais variação/postura, mantém BLOCK_NONE). Custo ~5-8x — alavancas de escala (caching, thinking cap, híbrido, limite 200→50) documentadas pra aplicar ANTES de tráfego pesado.
 - **Login híbrido (ADR-029):** magic link no 1º acesso/recuperação + email/senha depois (definida em /configuracoes).
 - **Vitória por opção 🔥 (ADR-030):** like por opção + coleta `winning_option_index` pro aprendizado MACRO (pós-MVP). Cabeçalho "3 OPÇÕES CALIBRADAS" + "gerar novamente" no resultado.
-- **Onboarding 5 telas (ADR-032):** fluxo guiado (perfil → 1ª mulher → mensagem → demo ao vivo). `onboarding_completed` marcado ao salvar perfil.
+- **Onboarding 5 telas (ADR-032):** fluxo guiado (perfil → 1ª mulher → mensagem → demo ao vivo). `onboarding_completed` marcado ao salvar perfil. **Repaginado no padrão Onyx & Brasa** (títulos Cormorant, labels maiúsculas tan, barra de progresso brasa, botões pill+glow, chips com glow).
 - **Design "Onyx & Brasa" (ADR-033):** tokens shadcn redefinidos (dark-only), Inter + Cormorant, login redesenhada (glow radial + botão pill), dashboard com stats reais + card de gerar com glow, chips/botões com glow brasa.
 - **Rename crush → mulher** no texto visível (interno: tabela/rota/variáveis intactas).
 - **Gate de assinatura (ADR-034):** `(app)/layout` bloqueia quem não é `active` (tela "acesso não ativo").
