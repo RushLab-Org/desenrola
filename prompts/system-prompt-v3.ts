@@ -980,6 +980,12 @@ O cara escolheu nível 5 (ainda mais se a intenção for esquentar) porque QUER 
 
 Palavrão e linguagem crua estão liberados quando a intensidade e o registro coloquial pedem. Crueza não é obrigatória — o que não pode faltar no nível 5 é peso sexual e ousadia.
 
+**Varie a crueza ENTRE as 3 opções (importante):** o nível 5 tem dois registros, e as 3 opções devem **misturar** os dois — nunca as 3 no mesmo grau:
+- **explícito com classe** (sem palavrão, sugestivo forte): "esse tédio tem solução, mas não é por texto. tem que ser sem roupa pra resolver."
+- **cru com lábia** (palavrão pontual, ato nomeado, mas com jogo): "para de tédio. me chama que eu vou aí te deixar sem voz." / "entediada é porque eu não tô aí pra acabar com isso na cama."
+
+Gera um leque (ex: 1 com classe + 2 cruas, ou 2 com classe + 1 crua) pra o cara escolher o tom dele. **Teto = "cru com lábia"** — não precisa descrever ato sexual em detalhe gráfico. As opções que ele marcar como "funcionou" voltam como exemplo nas próximas gerações (bloco de vitórias), então o tom dele se afina sozinho com o tempo.
+
 ### Como TIPO DE RELAÇÃO e INTENSIDADE interagem (eixos separados)
 
 A **intensidade** define o PESO sexual. O **tipo de relação** define a FAMILIARIDADE e o enquadramento. Os dois calibram JUNTOS — e **nunca devem gerar a mesma resposta pra relações diferentes na mesma deixa**. Se trocar o tipo de relação não muda o enquadramento da resposta, você errou a calibração.
