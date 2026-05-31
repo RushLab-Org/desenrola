@@ -42,6 +42,8 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 024 | Few-shot dinâmico por user: últimas 3 vitórias viram exemplos no prompt | Aceita | 2026-05-30 |
 | 025 | Canal de suporte/reembolso: email em vez de WhatsApp | Aceita | 2026-05-30 |
 | 026 | Entrada unificada (texto/print/áudio num bloco só) substitui as tabs do Marco 4 | Aceita | 2026-05-30 |
+| 027 | Calibração de geração: output literal (anti-meta) + few-shot de intensidade 4/5 + relationshipBoost por chamada | Aceita | 2026-05-30 |
+| 028 | Intenção "sexualizar" substitui "outros" na taxonomia de geração | Aceita | 2026-05-30 |
 
 ---
 
@@ -1259,3 +1261,123 @@ Substituir as tabs por um **form único** com um **bloco de mensagem unificado**
 - Usuários quiserem mandar texto + print juntos numa geração só → reavaliar caminho multimodal combinado (opção B descartada agora)
 - Métrica mostrar abandono no bloco de entrada → revisar affordances de anexo
 - Se tabs voltarem a ser úteis em outra parte do app, `tabs.tsx` segue disponível
+
+---
+
+## ADR-027: Calibração de geração — output literal (anti-meta) + few-shot de intensidade 4/5 + relationshipBoost por chamada
+
+**Data:** 2026-05-30
+**Status:** Aceita
+**Camada:** Produto — IA / Prompting
+
+**Relação com ADRs anteriores:** evolui a calibração do ADR-020 (5 níveis de intensidade + boost + temperatura) e do ADR-021 (age_range da crush). Não substitui nenhum — todos seguem **Aceitos**. Mudança de prompt sujeita ao ADR-007 (teste manual em alguns cenários antes de fechar).
+
+**Contexto:**
+Teste manual real (áudio: mulher diz que queria vinho à noite e "só faltava a campainha"; crush = ficante; intensidade 4; intenção "esquentar") expôs 3 falhas:
+
+1. **Output em formato meta/terceira pessoa:** uma das 3 opções saiu como *"ela disse que queria um vinhozinho hoje? diz pra ela que a companhia pra isso já chegou."* — instrução de coach em vez da mensagem pronta pra copiar. Viola o propósito do produto (o `texto` tem que ser copiável direto).
+2. **Intensidade 4 branda demais:** as opções saíram em registro ~3 (double meaning fofo) num convite que era claramente chamada pra sexo. Causa raiz: o system prompt **definia** os níveis 4 e 5 de forma abstrata mas **não tinha nenhum exemplo few-shot** de como uma resposta nível 4/5 realmente soa (os exemplos das 12 skills param no nível ~3). Sem âncora concreta, o Gemini 2.5 Flash volta pro viés de polidez mesmo com `intensityBoost` ativo.
+3. **Tipo de relação não movia o output:** ficante e conversante geravam resposta idêntica pra mesma mensagem. O tipo de relação era injetado como guia "macio" no prompt, sem reforço por chamada — o mesmo problema que o ADR-020 resolveu pra intensidade com o `intensityBoost`.
+
+**Decisão:**
+
+Três mudanças de calibração:
+
+1. **Regra de output literal (anti-meta)** em `prompts/system-prompt-v3.ts`:
+   - PARTE VII ganha "REGRA ZERO": cada `opcoes[].texto` é a mensagem LITERAL que o usuário copia e cola, em 1ª pessoa falando COM ela; proibido "diz pra ela que...", "responde que...", narração em 3ª pessoa. Com exemplo do anti-padrão (❌/✅).
+   - Descrição do campo `texto` no schema reforça o mesmo.
+
+2. **Few-shot de intensidade 4 e 5** em `prompts/system-prompt-v3.ts` PARTE IV:
+   - Bloco "ÂNCORA" com a mesma deixa dela escalando 3 → 4 → 5 (exemplos concretos).
+   - **Nível 5 é adaptativo (espelha o registro dela — PILAR 3):** ela sugestiva com classe → ousado com classe; ela crua/explícita → espelha o cru dela (palavrão OK). Decisão do humano (product owner): nível 5 alterna entre "putaria com classe" e "explícito cru" conforme a mensagem que ela mandou. Nunca mais cru que ela; no nível 5, nunca mais tímido que ela.
+   - Nota nova: **relação × intensidade são eixos separados** — intensidade = peso sexual, relação = familiaridade/enquadramento; nunca gerar a mesma resposta pra relações diferentes na mesma deixa (com exemplo ficante vs conversante vs namorada no mesmo nível 4).
+
+3. **`relationshipBoost(relationship)`** em `lib/gemini.ts`:
+   - Reforço contextual por chamada do tipo de relação (espelha o `intensityBoost` do ADR-020), injetado em `montarPromptUsuario` e `montarPromptBase` (texto, print e áudio).
+   - Notas específicas por tipo: namorada, ficante, conversante, ex (outras → vazio).
+   - Temperatura escalonada subiu nos níveis altos: 4: 1.0 → 1.05; 5: 1.05 → 1.1 (teto seguro pra JSON válido).
+
+**Validação:** `npx tsc --noEmit` OK, `npx eslint` limpo, `npm run build` verde.
+
+**Justificativa:**
+- LLM calibra por exemplo: a âncora few-shot é o lever mais forte pra resolver "branda demais" sem trocar de modelo (mantém ADR-006)
+- O padrão de "reforço por chamada" já provou funcionar no ADR-020 (intensidade); estender pra relação é consistente
+- Regra de output literal corrige um bug de formato que quebra o valor central do produto (mensagem copiável)
+- Nível 5 adaptativo respeita o PILAR 3 (espelhar registro) em vez de cravar um teto fixo de crueza
+
+**Implicações:**
+- System prompt cresceu ~50 linhas (ainda dentro do orçamento de tokens do ADR-007)
+- Conteúdo sexual explícito agora aparece como exemplo NO system prompt (intencional — é o que o produto faz; ADR-020 já autorizou intensidade 5 explícita com palavrão)
+- Temperatura 1.1 no nível 5 é o teto; se aumentar incidência de JSON malformado (erro "a IA travou"), recuar pra 1.05
+
+**Gatilho de reavaliação:**
+- Se ainda sair brando no nível 4/5 após few-shot → adicionar mais exemplos OU reavaliar Grok como tier premium (gatilho original do ADR-006/ADR-020)
+- Se o formato meta voltar a aparecer apesar da REGRA ZERO → adicionar guard server-side que detecta padrões ("diz pra ela", "responde que") e regenera
+- Se `relationshipBoost` ainda não diferenciar relações → tornar a diferença mais agressiva ou adicionar few-shot por relação
+- Teste manual (ADR-007) dos 3-4 cenários ainda pendente de confirmação do humano antes de considerar a calibração fechada
+
+---
+
+## ADR-028: Intenção "sexualizar" substitui "outros" na taxonomia de geração
+
+**Data:** 2026-05-30
+**Status:** Aceita
+**Camada:** Produto — IA / Schema
+
+**Relação com ADRs anteriores:** ajusta a calibração do ADR-027 (revisa o few-shot do nível 5) e evolui a taxonomia de intenção do ADR-007/ADR-008. Nenhum substituído.
+
+**Contexto:**
+Na revisão do few-shot do ADR-027, o humano (product owner) apontou que cravar "nível 5 espelha o registro dela / nunca seja mais cru que ela" **engessa**: muitas vezes o cara quer justamente **tomar a iniciativa** de mandar algo mais explícito pra subir o nível da conversa, mesmo que a mensagem dela tenha vindo morna. Quem deve definir a explicitude é a **intensidade + intenção que o usuário escolhe**, não a régua dela.
+
+Disso saiu uma segunda observação: a intenção **"outros"** é vaga (PARTE IV definia como "análise contextual livre" = sinal de calibração zero), e **"responder_normal"** já cobre o caso neutro/catch-all. Melhor trocar "outros" por uma intenção que agrega: **"sexualizar"**.
+
+**Decisão:**
+
+1. **Few-shot do nível 5 reescrito** (system-prompt-v3 PARTE IV): removida a regra de espelhamento/teto. Agora: no nível 5 quem manda é **intensidade + intenção**; ir pro explícito mesmo com mensagem dela morna é **quebra de registro deliberada pra cima** (o PILAR 3 já permite quebra como ferramenta). Exemplos cobrem ela-morna / ela-quente / ela-crua, todos resultando em resposta ousada conforme o usuário pediu.
+
+2. **Taxonomia de intenção:** remove `'outros'`, adiciona `'sexualizar'`.
+   - **sexualizar** = levar a conversa pro território sexual de forma DELIBERADA e óbvia (o cara tomando a iniciativa). Skills 6/7 com peso sexual; combina com a intensidade pra definir o grau (4-5 = bem safado/explícito).
+   - **Distinto de "esquentar"** (sobe tensão/flerte, pode ser sem sexo óbvio).
+
+**Arquivos alterados:**
+- `lib/schemas/geracao.ts` — `intentOptions` e `intentLabels` (swap)
+- `prompts/system-prompt-v3.ts` — few-shot do nível 5 reescrito + linha de calibração da intenção "sexualizar" na PARTE IV
+- `lib/gemini.ts` — `intensityBoost` reconhece `esquentar` OU `sexualizar` nos níveis 4 e 5 (instrução de "tomar a iniciativa pro sexual")
+- `schema.sql` — CHECK do `intent` atualizado
+- UI: chips de intenção em `gerar-form.tsx` se atualizam sozinhos (mapeiam `intentOptions`)
+
+**Migration manual necessária (humano roda no Supabase SQL Editor):**
+
+\`\`\`sql
+-- 1. Migra gerações antigas que usavam 'outros' (a regra nova não aceita mais)
+UPDATE public.generations SET intent = 'responder_normal' WHERE intent = 'outros';
+
+-- 2. Remove a CHECK constraint antiga de intent (seja qual for o nome) e cria a nova
+DO $$
+DECLARE c text;
+BEGIN
+  SELECT conname INTO c
+  FROM pg_constraint
+  WHERE conrelid = 'public.generations'::regclass
+    AND contype = 'c'
+    AND pg_get_constraintdef(oid) ILIKE '%intent%';
+  IF c IS NOT NULL THEN
+    EXECUTE format('ALTER TABLE public.generations DROP CONSTRAINT %I', c);
+  END IF;
+END $$;
+
+ALTER TABLE public.generations ADD CONSTRAINT generations_intent_check
+  CHECK (intent IN ('responder_normal','esquentar','sair_de_dr','pedir_pra_sair','reconquistar','desconversar','sexualizar'));
+\`\`\`
+
+**Ordem de deploy:** a insersão de geração com `intent` é **não-bloqueante** (se o insert falhar, o usuário ainda recebe a resposta — só não persiste). Então o push do código não quebra nada se a migration ainda não rodou; apenas gerações com `intent='sexualizar'` não vão persistir até a migration. Rodar a migration antes de usar "sexualizar" pra valer em produção.
+
+**Justificativa:**
+- Intensidade + intenção como fonte da explicitude é mais fiel ao uso real (o usuário decide o movimento) do que um teto preso na mensagem dela
+- "outros" não dava sinal nenhum; "sexualizar" dá um movimento estratégico claro que faltava
+- Custo baixo: 1 migration + swap de enum; a UI se adapta sozinha
+
+**Gatilho de reavaliação:**
+- Se "sexualizar" e "esquentar" na prática gerarem a mesma coisa (usuários não percebem diferença) → fundir ou redefinir
+- Se faltar um catch-all genérico que "responder_normal" não cubra → reavaliar reintroduzir algo como "outros"
+- Migration não rodada + uso de "sexualizar" em prod → gerações não persistem (lembrete operacional)

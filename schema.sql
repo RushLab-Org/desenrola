@@ -119,7 +119,7 @@ CREATE TABLE public.generations (
   intensity SMALLINT NOT NULL
     CHECK (intensity BETWEEN 1 AND 5),  -- ADR-020: ampliado de 1-4 pra 1-5
   intent TEXT NOT NULL
-    CHECK (intent IN ('responder_normal', 'esquentar', 'sair_de_dr', 'pedir_pra_sair', 'reconquistar', 'desconversar', 'outros')),
+    CHECK (intent IN ('responder_normal', 'esquentar', 'sair_de_dr', 'pedir_pra_sair', 'reconquistar', 'desconversar', 'sexualizar')),  -- ADR-028: 'outros' trocado por 'sexualizar'
   extra_context TEXT,
   
   -- Transcrição estruturada da mídia (ADR-022): NULL pra modo texto;

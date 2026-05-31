@@ -51,9 +51,9 @@ function temperatureFor(intensity: number): number {
     case 3:
       return 0.95;
     case 4:
-      return 1.0;
-    case 5:
       return 1.05;
+    case 5:
+      return 1.1;
     default:
       return 0.9;
   }
@@ -87,8 +87,8 @@ NOTA DE CALIBRAÇÃO (intensidade 3 - quente):
 
   if (intensity === 4) {
     const intentLine =
-      intent === 'esquentar'
-        ? '\n- Intenção "esquentar" + intensidade 4: vai DIRETO no peso sexual. Humor adulto como tempero ocasional, nunca como base.'
+      intent === 'esquentar' || intent === 'sexualizar'
+        ? `\n- Intenção "${intent}" + intensidade 4: vai DIRETO no peso sexual — o usuário tá tomando a iniciativa de subir pro sexo. Humor adulto como tempero ocasional, nunca como base.`
         : '';
     return `
 NOTA DE CALIBRAÇÃO (intensidade 4 - provocante / safadeza zelada):
@@ -99,16 +99,51 @@ NOTA DE CALIBRAÇÃO (intensidade 4 - provocante / safadeza zelada):
   }
 
   if (intensity === 5) {
+    const intentLine =
+      intent === 'esquentar' || intent === 'sexualizar'
+        ? '\n- A intenção + a intensidade 5 mandam aqui: o usuário escolheu subir pro explícito. Vai pro sexual direto MESMO que a última mensagem dela seja morna — ele tá tomando a iniciativa, não espere ela puxar.'
+        : '';
     return `
 NOTA DE CALIBRAÇÃO (intensidade 5 - explícito / putaria pouco sutil):
 - Sexual direto, sem rodeio. Humor minimizado — só nota cúmplice rápida, nunca como mediação.
 - Linguagem sexual adulta crua mas não objetificante. Frases que descrevem desejo/ação sexual com peso e cumplicidade.
 - Palavrão OK se o registro coloquial pedir.
 - SEM "kkk", SEM emoji de risada, SEM suavização performática.
-- Confiança ousada: ela tá no jogo, então não cala, não diminui, não pede permissão.`;
+- Confiança ousada: ela tá no jogo, então não cala, não diminui, não pede permissão.${intentLine}`;
   }
 
   return '';
+}
+
+// Boost de RELAÇÃO: reforço contextual por chamada do tipo de relação com a
+// crush. Mesma lógica do intensityBoost (ADR-020): o Gemini ignora guia "macio"
+// no system prompt; reforço explícito por chamada faz o tipo de relação MOVER o
+// output. Sem isso, ficante e conversante geram a mesma resposta (ADR-027).
+function relationshipBoost(relationship: string): string {
+  switch (relationship) {
+    case 'namorada':
+      return `
+NOTA DE RELAÇÃO (namorada/esposa — intimidade estabelecida):
+- Tom de quem já tem intimidade: sem cerimônia de paquera inicial, referências internas OK.
+- Foco em reacender, quebrar rotina, surpreender. Em registros altos, à vontade total.`;
+    case 'ficante':
+      return `
+NOTA DE RELAÇÃO (ficante/FWB — território conhecido):
+- Leve, ágil, intimidade presumida. Pode ir direto, sem construir do zero.
+- Sem demanda emocional grande, sem "definir relação", sem projeção de futuro.`;
+    case 'conversante':
+      return `
+NOTA DE RELAÇÃO (conversante/paquera recente — ainda construindo):
+- NÃO presuma intimidade que ainda não existe. Atração se constrói com jogo/sedução, não com familiaridade.
+- Se a intensidade pedida for alta (3+), pode ir, MAS reconhecendo que tá escalando rápido — com sedução e confiança, NUNCA com freio moralista. O enquadramento é diferente de quem já transa com ela.`;
+    case 'ex':
+      return `
+NOTA DE RELAÇÃO (ex):
+- Cuidado com o histórico. Postura adulta, sem rancor, sem cobrança, sem mágoa expressa.
+- Humor leve sobre o passado bom é OK; comparações com o presente e ressentimento, não.`;
+    default:
+      return '';
+  }
 }
 
 export type ProfileForPrompt = {
@@ -216,6 +251,7 @@ function montarPromptUsuario(
     : '';
 
   const boost = intensityBoost(input.intensity, input.intent);
+  const relBoost = relationshipBoost(crush.relationship_type);
   const vitoriasBloco = montarVitoriasBloco(vitorias);
 
   return `PERFIL DO USUÁRIO:
@@ -237,7 +273,7 @@ ${input.her_message}
 
 PARÂMETROS DA RESPOSTA SOLICITADA:
 - Intensidade desejada: ${input.intensity} (1=leve, 2=equilibrado, 3=quente, 4=provocante, 5=explícito)
-- Intenção do usuário: ${input.intent}${contextoExtraLine}${boost}${vitoriasBloco}
+- Intenção do usuário: ${input.intent}${contextoExtraLine}${boost}${relBoost}${vitoriasBloco}
 
 Gere 3 opções de resposta seguindo o JSON estruturado da PARTE VII do seu prompt.`;
 }
@@ -324,6 +360,7 @@ function montarPromptBase(
     : '';
 
   const boost = intensityBoost(input.intensity, input.intent);
+  const relBoost = relationshipBoost(crush.relationship_type);
   const vitoriasBloco = montarVitoriasBloco(vitorias);
 
   return `PERFIL DO USUÁRIO:
@@ -340,7 +377,7 @@ PERFIL DA CRUSH (${crush.name}):
 
 PARÂMETROS DA RESPOSTA SOLICITADA:
 - Intensidade desejada: ${input.intensity} (1=leve, 2=equilibrado, 3=quente, 4=provocante, 5=explícito)
-- Intenção do usuário: ${input.intent}${contextoExtraLine}${boost}${vitoriasBloco}`;
+- Intenção do usuário: ${input.intent}${contextoExtraLine}${boost}${relBoost}${vitoriasBloco}`;
 }
 
 const PROMPT_PRINT_INSTRUCAO = `

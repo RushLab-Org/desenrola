@@ -7,7 +7,7 @@ export const intentOptions = [
   'pedir_pra_sair',
   'reconquistar',
   'desconversar',
-  'outros',
+  'sexualizar',
 ] as const;
 
 export const intentLabels: Record<(typeof intentOptions)[number], string> = {
@@ -17,7 +17,7 @@ export const intentLabels: Record<(typeof intentOptions)[number], string> = {
   pedir_pra_sair: 'pedir pra sair',
   reconquistar: 'reconquistar',
   desconversar: 'desconversar',
-  outros: 'outros',
+  sexualizar: 'sexualizar',
 };
 
 // ADR-020: 5 etapas em vez de 4. Definições por etapa em system-prompt-v3 PARTE IV.
