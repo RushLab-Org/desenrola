@@ -55,8 +55,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // TODO Marco 5: checar subscription_status === 'active' aqui pra bloquear
-  // não-pagantes. No Marco 1 deixamos passar pra permitir teste de auth.
+  // Gate de assinatura (subscription_status === 'active') vive no (app)/layout.tsx
+  // — server component que embrulha as rotas autenticadas (ADR-034). Aqui só
+  // tratamos auth (logado vs não), pra não fazer query de banco a cada request.
 
   return supabaseResponse;
 }

@@ -49,6 +49,7 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 031 | Modelo de geração: Gemini 3.5 Flash substitui 2.5 Flash (qualidade/variação; custo ~5-8x, mitigável) | Aceita | 2026-05-31 |
 | 032 | Onboarding guiado em 5 telas (Marco 6); onboarding_completed marcado ao salvar perfil | Aceita | 2026-05-31 |
 | 033 | Design system "Onyx & Brasa" — dark-only, Inter+Cormorant, tokens shadcn redefinidos | Aceita | 2026-05-31 |
+| 034 | Gate de assinatura no (app)/layout — só subscription_status='active' usa o app | Aceita | 2026-05-31 |
 
 ---
 
@@ -1601,3 +1602,31 @@ Elementos dos mockups que são estrutura nova, não só cor: stats do dashboard 
 **Gatilho de reavaliação:**
 - Light mode algum dia → adicionar tokens no `:root` separado + toggle
 - Se a passada estrutural revelar specs faltando → pedir mockup adicional ao humano
+
+---
+
+## ADR-034: Gate de assinatura no (app)/layout
+
+**Data:** 2026-05-31
+**Status:** Aceita
+**Camada:** Auth / Acesso
+
+**Contexto:**
+Faltava o bloqueio de acesso pra não-pagantes (TODO antigo em `middleware.ts:58`). Sem ele, qualquer conta logada (inclusive criada por magic link sem compra, ou reembolsada) acessava o app. A RLS já bloqueava os *dados*, mas o acesso à UI ficava aberto.
+
+**Decisão:**
+Implementar o gate no **`app/(app)/layout.tsx`** (server component que embrulha todas as rotas autenticadas), não no middleware. Lógica: busca `subscription_status` do profile; se `!== 'active'`, renderiza uma tela "acesso não ativo" (mensagem por status: pending/refunded/outro + email de suporte + botão sair) em vez do app.
+
+**Por que no layout e não no middleware:**
+- Evita query de banco a **cada request** (o middleware roda em todo request; o layout roda 1x por navegação/render).
+- Permite uma **UI de bloqueio amigável** (não só redirect) sem loop (o usuário está logado; redirecionar pra /login voltaria pro app).
+- O middleware segue só com auth (logado vs não) + redirect de não-logados.
+
+**Implicações:**
+- Conta criada pelo webhook na compra (APPROVED → `active`) passa. `pending` (pagamento não confirmado) e `refunded`/`cancelled` são barrados.
+- Contas de teste criadas por magic link (sem compra) ficam `pending` → barradas. A conta admin (`admin@sacada.com`) foi criada já `active` → passa.
+- Combina com (mas não depende de): `shouldCreateUser:false` no magic link + "Allow new users to sign up" off no Supabase (esses impedem a *criação* de conta junk; o gate impede o *uso* mesmo se a conta existir).
+
+**Gatilho de reavaliação:**
+- Se a query por request/render pesar → cachear o status ou mover pro middleware com cache
+- Se precisar de mais granularidade (trial, planos) → expandir além do booleano active

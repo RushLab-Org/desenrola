@@ -1,11 +1,49 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
 import { signOut } from './actions';
 
 // TODO design: header/nav visual (definir com humano via Claude Design)
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
+
+  // Gate de assinatura (ADR-034): só quem está 'active' usa o app.
+  // Conta criada pelo webhook na compra (active) passa; pending/refunded é barrado.
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_status')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.subscription_status !== 'active') {
+    const status = profile?.subscription_status ?? 'pending';
+    const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? 'apoiosacada@gmail.com';
+    const msg =
+      status === 'refunded'
+        ? 'teu acesso foi encerrado (reembolso).'
+        : status === 'pending'
+          ? 'teu pagamento ainda não foi confirmado.'
+          : 'teu acesso não está ativo.';
+    return (
+      <main className="flex min-h-svh flex-col items-center justify-center px-6 text-center">
+        <div className="w-full max-w-sm space-y-4">
+          <h1 className="font-serif text-2xl font-medium tracking-tight">acesso não ativo</h1>
+          <p className="text-muted-foreground text-sm">{msg}</p>
+          <p className="text-muted-foreground text-sm">
+            qualquer coisa, fala com a gente:{' '}
+            <span className="text-foreground">{supportEmail}</span>
+          </p>
+          <form action={signOut}>
+            <Button variant="outline" type="submit">
+              sair
+            </Button>
+          </form>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="flex min-h-svh flex-col">
