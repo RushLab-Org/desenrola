@@ -10,6 +10,14 @@
 
 ---
 
+## 🟢 Sessão 2026-06-02 — resumo (detalhes em SESSAO_ATUAL.md)
+
+**Feito (no ar):** **landing page portada** do Claude design pro projeto em `app/(marketing)/lp` (ADR-035/036) — HTML→JSX (Server Component), fontes via `next/font`, CSS "Onyx & Brasa" escopado sob `.lp-root`. **Demo interativo ligado na IA real** (texto; print/áudio mostram popup "exclusivo no app"; limite de 2 gerações por cookie + rate limit IP). **Fallback de modelo** (ADR-037): `gemini-3.5-flash` → `2.5-flash` em 503/sobrecarga — resolve queda do 3.5 que estava derrubando toda geração.
+
+**Pendente da landing:** trocar os 6 `href="#checkout"` pelo link real do Perfect Pay (humano tem); rewrite por hostname no middleware (`dominio.com` → `/lp`) quando os domínios forem configurados; rate limit durável (Upstash) pós-MVP.
+
+---
+
 ## 🔴 Sessão 2026-05-31 — resumo (detalhes em SESSAO_ATUAL.md)
 
 **Feito (no ar):** entrada unificada texto/print/áudio (ADR-026), calibração da IA + intenção `sexualizar` (ADR-027/028), **Gemini 3.5 Flash** (ADR-031), **login híbrido** email+senha (ADR-029), like por opção 🔥 (ADR-030), **onboarding de 5 telas** (ADR-032), **design system "Onyx & Brasa"** (ADR-033), rename crush→mulher, **gate de assinatura** ligado (ADR-034).
@@ -250,7 +258,7 @@
 - [ ] **Spend limit** confirmado no Google AI Studio
 - [ ] **Backup manual do schema** do Supabase (princípio de propriedade dos dados)
 - [ ] Documentação interna revisada: `SESSAO_ATUAL.md`, `DECISIONS.md`, `ROADMAP.md` consistentes
-- [ ] Página de vendas externa (`dominio.com`) pronta — escopo separado do app
+- [~] Página de vendas externa pronta — **portada pro projeto em `app/(marketing)/lp`** (ADR-035/036). Falta: link real do checkout (Perfect Pay) nos 6 CTAs + rewrite por hostname pra servir em `dominio.com` quando o domínio for configurado
 - [ ] Tráfego pronto pra rodar — criativos, copy, conta de anúncio com pixel
 
 ---

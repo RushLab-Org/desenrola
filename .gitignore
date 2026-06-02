@@ -52,4 +52,7 @@ next-env.d.ts
 image*.png
 *.local.png
 
+# bundle/export bruto da landing (Claude design) — já portado pra app/(marketing)
+Sacada-Landing-PV2.html
+
 .vercel

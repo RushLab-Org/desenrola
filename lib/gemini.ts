@@ -2,6 +2,8 @@ import {
   GoogleGenerativeAI,
   HarmBlockThreshold,
   HarmCategory,
+  type GenerateContentResult,
+  type Part,
 } from '@google/generative-ai';
 import { requireEnv } from '@/lib/env';
 import { SYSTEM_PROMPT_V3 } from '@/prompts/system-prompt-v3';
@@ -59,12 +61,16 @@ function temperatureFor(intensity: number): number {
   }
 }
 
-function getModel(intensity: number) {
+// ADR-031: 3.5-flash primário (qualidade/variação melhor). ADR-037: fallback
+// pra 2.5-flash quando o 3.5 dá 503/sobrecarga (picos de demanda do Google).
+const PRIMARY_MODEL = 'gemini-3.5-flash';
+const FALLBACK_MODEL = 'gemini-2.5-flash';
+
+function getModel(intensity: number, modelName: string) {
   const genAI = new GoogleGenerativeAI(requireEnv('GEMINI_API_KEY'));
   return genAI.getGenerativeModel({
-    // ADR-031: 3.5-flash (qualidade/variação melhor, mantém BLOCK_NONE + JSON).
-    // Custo ~5-8x do 2.5-flash — ver ADR pra alavancas de escala (caching, etc).
-    model: 'gemini-3.5-flash',
+    // mantém BLOCK_NONE + JSON. Custo do 3.5 ~5-8x do 2.5 — ver ADR-031/037.
+    model: modelName,
     systemInstruction: SYSTEM_PROMPT_V3,
     safetySettings,
     generationConfig: {
@@ -72,6 +78,47 @@ function getModel(intensity: number) {
       temperature: temperatureFor(intensity),
     },
   });
+}
+
+// Detecta erro de DISPONIBILIDADE (vale retry/fallback), não erro de conteúdo.
+function isOverloadError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /\b(503|500|429)\b|overloaded|high demand|Service Unavailable|UNAVAILABLE|RESOURCE_EXHAUSTED|internal error/i.test(
+    msg,
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+type GenContentInput = string | Array<string | Part>;
+
+// Geração resiliente (ADR-037): tenta o primário (1 retry em erro de
+// sobrecarga), depois cai pro fallback. Erro não-transitório aborta na hora.
+// Retorna a response do Gemini ou relança o último erro.
+async function generateResilient(
+  intensity: number,
+  input: GenContentInput,
+): Promise<GenerateContentResult['response']> {
+  const chain = [PRIMARY_MODEL, FALLBACK_MODEL];
+  let lastErr: unknown;
+
+  for (const modelName of chain) {
+    const model = getModel(intensity, modelName);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const result = await model.generateContent(input);
+        return result.response;
+      } catch (err) {
+        lastErr = err;
+        if (!isOverloadError(err)) throw err; // não-transitório: aborta
+        if (attempt === 0) await sleep(700); // backoff antes do retry
+      }
+    }
+    // esgotou retries nesse modelo por sobrecarga → próximo da chain
+  }
+  throw lastErr;
 }
 
 // Boost contextual: instrução extra anexada ao prompt do usuário pra reforçar
@@ -293,7 +340,6 @@ export async function gerarPorTexto(args: {
   crush: CrushForPrompt;
   vitorias?: VitoriaPassada[];
 }): Promise<GeracaoOutput> {
-  const model = getModel(args.input.intensity);
   const userPrompt = montarPromptUsuario(
     args.input,
     args.profile,
@@ -301,8 +347,7 @@ export async function gerarPorTexto(args: {
     args.vitorias ?? [],
   );
 
-  const result = await model.generateContent(userPrompt);
-  const response = result.response;
+  const response = await generateResilient(args.input.intensity, userPrompt);
 
   // Gemini pode retornar promptFeedback.blockReason mesmo com BLOCK_NONE
   // em casos de guardrail hard (PARTE VI do system prompt cobre os mesmos).
@@ -457,7 +502,6 @@ export async function gerarPorPrint(args: {
   mimeType: string;
   vitorias?: VitoriaPassada[];
 }): Promise<GeracaoOutputPrint> {
-  const model = getModel(args.input.intensity);
   const basePrompt = montarPromptBase(
     args.input,
     args.profile,
@@ -466,11 +510,10 @@ export async function gerarPorPrint(args: {
   );
   const fullPrompt = basePrompt + '\n\n' + PROMPT_PRINT_INSTRUCAO;
 
-  const result = await model.generateContent([
+  const response = await generateResilient(args.input.intensity, [
     { text: fullPrompt },
     { inlineData: { mimeType: args.mimeType, data: args.imageBase64 } },
   ]);
-  const response = result.response;
 
   if (response.promptFeedback?.blockReason) {
     throw new GeracaoBloqueadaError(
@@ -503,7 +546,6 @@ export async function gerarPorAudio(args: {
   mimeType: string;
   vitorias?: VitoriaPassada[];
 }): Promise<GeracaoOutputAudio> {
-  const model = getModel(args.input.intensity);
   const basePrompt = montarPromptBase(
     args.input,
     args.profile,
@@ -512,11 +554,10 @@ export async function gerarPorAudio(args: {
   );
   const fullPrompt = basePrompt + '\n\n' + PROMPT_AUDIO_INSTRUCAO;
 
-  const result = await model.generateContent([
+  const response = await generateResilient(args.input.intensity, [
     { text: fullPrompt },
     { inlineData: { mimeType: args.mimeType, data: args.audioBase64 } },
   ]);
-  const response = result.response;
 
   if (response.promptFeedback?.blockReason) {
     throw new GeracaoBloqueadaError(

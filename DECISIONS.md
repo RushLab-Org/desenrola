@@ -50,6 +50,9 @@ Registro de todas as decisões arquiteturais do projeto seguindo o padrão ADR.
 | 032 | Onboarding guiado em 5 telas (Marco 6); onboarding_completed marcado ao salvar perfil | Aceita | 2026-05-31 |
 | 033 | Design system "Onyx & Brasa" — dark-only, Inter+Cormorant, tokens shadcn redefinidos | Aceita | 2026-05-31 |
 | 034 | Gate de assinatura no (app)/layout — só subscription_status='active' usa o app | Aceita | 2026-05-31 |
+| 035 | Landing page no mesmo projeto (route group marketing) + domínios separados na Vercel | Aceita | 2026-06-01 |
+| 036 | Port da landing + demo público ligado na IA (texto, popup print/áudio, limite 2) | Aceita | 2026-06-01 |
+| 037 | Fallback de modelo: 3.5-flash → 2.5-flash em 503/sobrecarga (resiliência) | Aceita | 2026-06-02 |
 
 ---
 
@@ -1630,3 +1633,101 @@ Implementar o gate no **`app/(app)/layout.tsx`** (server component que embrulha 
 **Gatilho de reavaliação:**
 - Se a query por request/render pesar → cachear o status ou mover pro middleware com cache
 - Se precisar de mais granularidade (trial, planos) → expandir além do booleano active
+
+---
+
+## ADR-035: Landing page no mesmo projeto (route group marketing) + domínios separados na Vercel
+
+**Data:** 2026-06-01
+**Status:** Aceita
+**Camada:** Arquitetura / Estrutura de projeto
+
+**Contexto:**
+A landing page (construída no Claude design, fora do repo) precisa de um bloco interativo de "gerar resposta" que deixa o visitante testar a IA **uma vez, sem login**. Esse bloco depende da inteligência do produto, que mora em `prompts/system-prompt-v3.ts` + `lib/gemini.ts` e exige o `GEMINI_API_KEY` (secret backend). Regra dura do CLAUDE.md: **nunca duplicar o system prompt v3**. A pergunta era onde a landing deve morar — mesmo projeto vs repo separado.
+
+**Decisão:**
+Landing **no mesmo projeto Next.js**, num route group público `app/(marketing)/`, com o demo reusando `lib/gemini.ts` diretamente (sem duplicar prompt nem chave). Domínios separados na Vercel **depois** (`dominio.com` → landing, `app.dominio.com` → app), apontando pro mesmo projeto. Extração pra repo próprio fica pós-validação, só se justificar.
+
+**Por que mesmo projeto e não repo separado:**
+- O cérebro da IA (prompt + `GEMINI_API_KEY`) tem que rodar no backend que os tem. Repo separado **não desacopla** — obrigaria duplicar o prompt (proibido) ou expor uma API pública do app principal (CORS, secret compartilhado, hop de rede). A inteligência continuaria morando aqui de qualquer jeito.
+- Fonte única do prompt: atualizar o v3 atualiza o demo automaticamente — a landing mostra o produto real.
+- Um deploy, um `GEMINI_API_KEY`, uma config. Mais rápido de validar (princípio #1) e mais simples (princípio #5).
+- Separação marketing × app (princípio #7) se resolve por route group + domínio + **não aplicar a skill `produto-dopaminergico` no `(marketing)`** — não exige codebase separado. O princípio fala de escopo/regras separados, não de repo separado.
+
+**Implicações:**
+- Criar route group `app/(marketing)/` (público) separado do `app/(app)/` (autenticado + gate ADR-034).
+- `middleware.ts`: hoje redireciona pra `/login` tudo fora de `PUBLIC_PATH_PREFIXES`. As rotas da landing e o endpoint do demo entram na allowlist pública — com cuidado pra não furar o gate do `(app)`.
+- O demo roda fora do fluxo normal (sem login, sem profile, sem crush, fora do gate de assinatura). Server Action / route handler público dedicado que alimenta o prompt.
+- A skill `produto-dopaminergico` **não** rege o `(marketing)` (regras de marketing externas, escopo separado).
+
+**Sub-decisões ainda em aberto (a fechar ao implementar o bloco interativo):**
+- **Como o demo monta o contexto sem login:** profile/crush "fake" mínimo vs coletar mini-inputs (idade, tipo de relação) no próprio bloco.
+- **Anti-abuso do "testar uma vez":** cookie + rate limit por IP (best-effort) vs exigir email (lead magnet) vs cookie só. Necessário porque é endpoint público batendo na chave paga do Gemini (ADR-031: 3.5-flash, ~5-8x custo).
+- Cada uma vira ADR próprio quando fechada.
+
+**Gatilho de reavaliação:**
+- Se a landing crescer a ponto de o acoplamento de deploy atrapalhar (experimentos de marketing quebrando o app, ou cadência de deploy conflitante) → extrair pra repo/projeto separado, expondo a IA via API pública versionada.
+- Se o custo do demo público escalar além do aceitável → endurecer anti-abuso ou usar config/modelo mais barato só no demo.
+
+---
+
+## ADR-036: Port da landing + demo público ligado na IA (texto, popup print/áudio, limite 2)
+
+**Data:** 2026-06-01
+**Status:** Aceita
+**Camada:** Marketing / Arquitetura de UI
+**Fecha as sub-decisões abertas no ADR-035.**
+
+**Contexto:**
+A landing foi construída no Claude design e exportada como `Sacada-Landing-PV2.html` — um **bundle auto-extraível** (721KB): 17 fontes woff2 em base64+gzip + o HTML real codificado como JSON, desempacotado em runtime via blob URLs. Esse formato não dá controle editável. Por baixo, o conteúdo é HTML estático + CSS à mão (design "Onyx & Brasa", dark) + JS vanilla, **sem React/Tailwind**, com o bloco "Testa agora" já mockado e hooks estáveis.
+
+**Decisão (e como foi implementado):**
+- **Conversão:** extraído o template do bundle, descartado o empacotamento. HTML→JSX por script (`class`→`className`, void self-close, camelCase de SVG, `style` objeto). Resultado: `app/(marketing)/lp/page.tsx` (Server Component estático, SEO) com a seção interativa isolada em `app/(marketing)/_components/demo.tsx` (`'use client'`).
+- **Fontes:** os 51 `@font-face` (17 woff2) foram **removidos** — Inter + Cormorant já vêm do root layout via `next/font`. O CSS remapeia `--font-display/body` pras variáveis `--font-cormorant`/`--font-sans`.
+- **CSS:** mantido à mão (não convertido pra Tailwind — princípio #1) num arquivo dedicado `app/(marketing)/landing.css`, **escopado sob `.lp-root`** (todos os seletores prefixados; `body`→`.lp-root`). Necessário porque no App Router CSS importado é global — seletores de elemento vazariam pro app. Não é CSS Module nem CSS-in-JS, então não fere o CLAUDE.md.
+- **Demo só texto:** liga na IA real (`gerarPorTexto` de `lib/gemini.ts`) via Server Action pública `app/(marketing)/actions.ts`. Print/áudio mostram **popup "exclusivo no app"** (decisão do humano) em vez de processar mídia — evita custo/abuso multimodal no demo público.
+- **Contexto sem login:** perfil/crush **genéricos fixos** no servidor (homem 35+ voltando ao mercado / crush "conversante"). O `crush_id` não é usado na geração, então vai um UUID placeholder.
+- **Anti-abuso:** **2 gerações por pessoa** (decisão do humano) via cookie httpOnly (`sacada_demo_usos`, 30 dias) + rate limit por IP em memória (best-effort, `IP_LIMIT=4`/24h).
+- **Rota:** landing em **`/lp`** por ora (evita conflito de página paralela com `(app)/page.tsx`, ambos em `/`). `/lp` adicionado aos `PUBLIC_PATH_PREFIXES` do middleware.
+
+**Implicações / pendências:**
+- **Checkout:** os 6 `href="#checkout"` ainda são âncoras — trocar pelo link real do Perfect Pay (humano já tem; ficou por último).
+- **Domínio raiz:** quando `dominio.com`/`app.dominio.com` forem configurados na Vercel, adicionar **rewrite por hostname** no middleware (domínio de marketing → `/lp`) pra landing servir em `/`. Hoje só acessível em `/lp`.
+- **Rate limit durável:** o IP em memória reseta a cada cold start (serverless). Pós-MVP: mover pra Upstash/Redis.
+
+**Gatilho de reavaliação:**
+- Custo/abuso do demo subindo → endurecer (exigir email, captcha) ou modelo mais barato só no demo.
+- Se a manutenção do CSS à mão pesar → migrar incrementalmente pra Tailwind.
+
+---
+
+## ADR-037: Fallback de modelo — 3.5-flash → 2.5-flash em 503/sobrecarga
+
+**Data:** 2026-06-02
+**Status:** Aceita
+**Camada:** IA / Geração (runtime)
+**Não substitui o ADR-031** — `gemini-3.5-flash` segue como primário.
+
+**Contexto:**
+Ao validar o demo da landing, a geração falhava. Investigado: a chave estava presente e funcionando, mas o `gemini-3.5-flash` (modelo primário, ADR-031) retornava **503 "This model is currently experiencing high demand"** de forma sustentada (5/5 chamadas). O `gemini-2.5-flash` respondia normalmente com a mesma chave. Como TODA geração (app + demo) passa por `lib/gemini.ts`, o app inteiro fica indisponível quando o 3.5 está sobrecarregado no lado do Google.
+
+**Decisão:**
+Adicionar **fallback resiliente** em `lib/gemini.ts`. Nova função `generateResilient(intensity, input)` que centraliza as 3 funções de geração (`gerarPorTexto`/`gerarPorPrint`/`gerarPorAudio`):
+- Tenta o **primário** `gemini-3.5-flash` (1 chamada + 1 retry com backoff de 700ms em erro de sobrecarga).
+- Persistindo a sobrecarga, cai pro **fallback** `gemini-2.5-flash` (mesma política).
+- `isOverloadError()` só dispara retry/fallback em erros de **disponibilidade** (503/500/429, overloaded, high demand, UNAVAILABLE, RESOURCE_EXHAUSTED). Erro não-transitório (ex.: input inválido) aborta na hora.
+- `blockReason` (recusa de conteúdo) NÃO dispara fallback — é tratado depois, em cada função, como antes.
+
+**Por que fallback e não trocar o modelo:**
+- Mantém a qualidade/variação do 3.5 (motivo do ADR-031) quando ele está disponível.
+- Garante que o app/demo nunca fica 100% quebrado por uma queda transitória do 3.5.
+- O 2.5-flash é mais barato — em fallback o custo até cai temporariamente.
+
+**Implicações:**
+- O `getModel()` passou a receber `modelName` (antes era fixo). Comportamento de geração inalterado quando o 3.5 responde normalmente.
+- Em janelas de fallback, a saída vem do 2.5 (calibração levemente diferente) — aceitável vs. ficar fora do ar.
+
+**Gatilho de reavaliação:**
+- Se o 3.5 estabilizar e o fallback nunca disparar por meses → manter mesmo assim (custo zero quando não usado).
+- Se o 2.5 também ficar instável → adicionar 3º elo na chain ou fila/retry assíncrono.
+- Se a diferença de calibração 3.5↔2.5 incomodar em produção → alinhar boosts por modelo.

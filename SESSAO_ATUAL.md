@@ -1,6 +1,6 @@
-# Sessão atual — Sacada IA (atualizado em 2026-05-31)
+# Sessão atual — Sacada IA (atualizado em 2026-06-02)
 
-**Estado:** App funcional em produção com **tema visual Onyx & Brasa** aplicado (fundação + dashboard + login), **login híbrido** (magic link + email/senha), **gate de assinatura ligado** (só `active` usa o app), **onboarding de 5 telas** pronto, e **geração calibrada** rodando no **Gemini 3.5 Flash**. Falta a passada de design **estrutural** em algumas telas e o teste end-to-end do Marco 5 (compra real).
+**Estado:** App funcional em produção com **tema visual Onyx & Brasa**, **login híbrido**, **gate de assinatura**, **onboarding de 5 telas** e **geração calibrada** (Gemini 3.5 Flash, **agora com fallback pro 2.5** em sobrecarga). Nesta sessão: **landing page portada** pro projeto (`app/(marketing)/lp`) com **demo interativo ligado na IA real**. Falta a passada de design **estrutural** em algumas telas, o teste end-to-end do Marco 5 (compra real), e o link de checkout na landing.
 
 **Repositório:** `RushLab-Org/sacada-ia` (GitHub privado)
 **URL produção:** `https://sacada-ia.vercel.app`
@@ -22,7 +22,20 @@ Mockups aprovados pelo humano (login, dashboard, gerar, resultado, mulheres, per
 
 ---
 
-## ✅ Feito nesta sessão (2026-05-31)
+## ✅ Feito nesta sessão (2026-06-02)
+
+Tudo commitado e no ar. ADRs novos: 035, 036, 037.
+
+- **Landing page portada (ADR-035, ADR-036):** a LP feita no Claude design (`Sacada-Landing-PV2.html`, um bundle auto-extraível) foi extraída e portada pro projeto em `app/(marketing)/lp/page.tsx` — HTML→JSX via script, **Server Component** (SEO). Fontes via `next/font` (os 51 @font-face/17 woff2 descartados). CSS "Onyx & Brasa" à mão em `app/(marketing)/landing.css`, **escopado sob `.lp-root`** (CSS no App Router é global). `/lp` liberado no `middleware.ts`.
+- **Demo interativo ligado na IA real (ADR-036):** `app/(marketing)/_components/demo.tsx` (client) + Server Action pública `app/(marketing)/actions.ts` chamando `gerarPorTexto` com perfil/crush genéricos. **Só texto**; print/áudio mostram **popup "exclusivo no app"**. **Limite de 2 gerações** por pessoa (cookie httpOnly + rate limit IP best-effort).
+- **Fallback de modelo (ADR-037):** `lib/gemini.ts` ganhou `generateResilient()` — `gemini-3.5-flash` primário com retry, caindo pro `gemini-2.5-flash` em 503/sobrecarga. Descoberto ao validar o demo: o 3.5 estava dando 503 sustentado (derrubava TODA geração do app).
+- **Bundle bruto da landing** (`Sacada-Landing-PV2.html`, 721KB) adicionado ao `.gitignore` (já portado, não precisa versionar).
+
+**Landing acessível em produção:** `https://sacada-ia.vercel.app/lp` (path `/lp` por ora; vira `/` no domínio de marketing via rewrite por hostname quando o domínio for configurado).
+
+---
+
+## ✅ Feito na sessão anterior (2026-05-31)
 
 Tudo commitado e no ar. ADRs novos: 026 a 034.
 
@@ -56,7 +69,7 @@ Tudo commitado e no ar. ADRs novos: 026 a 034.
 ## ⚠️ Convenções operacionais (manter)
 
 - **Working dir lowercase** (ADR-019): rodar tudo em `D:\Claude Code\sacada-ia` (minúsculo). Conferir com `(Get-Item .).FullName`.
-- **Build:** NÃO usar `doppler run -- npm run build` (quebra stdio). Injetar env manualmente: `set -a && . <(doppler secrets download --no-file --format env) && set +a && npm run build`.
+- **Build/dev:** NÃO usar `doppler run --` (nem `build` nem `dev` — quebra). As env vars já estão no **ambiente do sistema**, então `npm run dev` / `npm run build` puros funcionam sozinhos.
 - **Git email:** local precisa ser email público vinculado à Vercel (senão deploy trava no team plan).
 - **Deploy:** push na `main` → Vercel builda. Build local sempre verde antes de pushar.
 
@@ -68,6 +81,7 @@ ADR-001 a 015: fundações (TS, Next 15, Tailwind/shadcn, Supabase SP, magic lin
 ADR-016 a 019: Next 16→15 + React 18, working dir lowercase.
 ADR-020 a 025: intensidade 5 etapas, age_range crush, multimodal, webhook Perfect Pay, few-shot por user, suporte por email.
 ADR-026 a 034: entrada unificada, calibração + sexualizar, vitória por opção, Gemini 3.5 Flash, onboarding 5 telas, design Onyx & Brasa, gate de assinatura.
+ADR-035 a 037: landing no mesmo projeto (route group marketing), port + demo público ligado na IA, fallback de modelo 3.5→2.5.
 
 ---
 
