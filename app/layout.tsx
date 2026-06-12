@@ -16,10 +16,9 @@ const cormorant = Cormorant_Garamond({
   weight: ['400', '500', '600'],
 });
 
-// TODO design: metadata final (título canonical, OG image, etc) com humano
 export const metadata: Metadata = {
-  title: 'Sacada IA',
-  description: 'copiloto de comunicação para conversas com mulheres.',
+  title: 'Desenrola',
+  description: 'Respostas calibradas pra qualquer conversa — no seu tom, sem parecer robô.',
 };
 
 export default function RootLayout({

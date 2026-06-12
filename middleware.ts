@@ -7,7 +7,8 @@ const PUBLIC_PATH_PREFIXES = [
   '/auth/callback',
   '/sucesso',
   '/api/webhooks',
-  '/lp', // landing page pública (ADR-035) + Server Action do demo
+  '/lp',   // landing page pública (ADR-035) + Server Action do demo
+  '/quiz', // funil de quiz público
 ];
 
 function isPublicPath(pathname: string): boolean {

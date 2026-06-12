@@ -18,7 +18,8 @@ export function StickyNav() {
 
   return (
     <nav className={`sticky-nav${visible ? ' sticky-nav--visible' : ''}`} aria-hidden={!visible}>
-      <span className="sticky-nav__brand brand">Sacada</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo-icon.png" alt="Desenrola" className="sticky-nav__logo" />
       <a href="#pitch" onClick={scrollToPitch} className="cta sticky-nav__cta">
         Ver a oferta <span className="arw">→</span>
       </a>

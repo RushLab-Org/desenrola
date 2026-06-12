@@ -17,14 +17,14 @@ export default function LandingPage() {
 
       {/* ── 1. Hero ────────────────────────────────────────────── */}
       <header className="hero">
-        <span className="brand">Sacada</span>
         <div className="wrap">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Desenrola" className="hero-logo" />
           <p className="prehead">Pra todo homem que voltou a ficar solteiro depois dos 35 — e descobriu que o jogo mudou.</p>
           <h1 className="h-hero">Ela mandou mensagem. E você travou de novo.</h1>
-          <p className="sub">Cola o que ela escreveu. Em 10 segundos você tem 3 respostas — no seu tom, sem parecer robô.</p>
+          <p className="sub">Cola o que ela mandou. A Desenrola desenrola em segundos: 3 respostas no teu tom, prontas pra mandar.</p>
           <HeroDemoMini />
-          <a href="#pitch" className="cta" data-cta="" style={{ marginTop: '24px' }}>Ver a oferta completa <span className="arw">→</span></a>
-          <p className="cta-sub">Sem mensalidade · acesso imediato · garantia 7 dias</p>
+          <p className="cta-sub" style={{ marginTop: '16px' }}>Sem mensalidade · acesso imediato · garantia 7 dias</p>
         </div>
       </header>
 
@@ -43,9 +43,9 @@ export default function LandingPage() {
           <div style={{ marginTop: '24px' }}>
             <p>Não é ChatGPT. Não é curso. Não é coach te mandando "ser mais confiante".</p>
             <p>É uma IA construída pra fazer uma coisa só, e fazer bem: você cola a mensagem que ela te mandou, e em segundos recebe <strong>3 respostas calibradas</strong> — no tom certo, prontas pra mandar.</p>
-            <p className="pull"><span className="serif-accent">A Sacada foi construída pra não parecer IA.</span></p>
+            <p className="pull"><span className="serif-accent">A Desenrola foi construída pra não parecer IA.</span></p>
             <p>Escreve como brasileiro de verdade — com a gíria na medida, a vírgula onde a fala respira, a malandragem certa. E calibra pro SEU momento: você voltou ao mercado depois de anos, ela ajusta tudo pra você soar como um homem maduro e confiante.</p>
-            <div className="method-badge">★ Método Resposta Certa</div>
+            <div className="method-badge">★ Método Desenrola</div>
           </div>
         </div>
       </section>
@@ -61,7 +61,7 @@ export default function LandingPage() {
             <div className="step">
               <span className="num">1</span>
               <h3>Cola o que ela mandou.</h3>
-              <p>Pode digitar, colar o print da conversa, ou até mandar o áudio que ela te enviou. A Sacada entende.</p>
+              <p>Pode digitar, colar o print da conversa, ou até mandar o áudio que ela te enviou. A Desenrola entende tudo.</p>
             </div>
             <div className="step">
               <span className="num">2</span>
@@ -83,11 +83,11 @@ export default function LandingPage() {
       <section data-animate>
         <div className="wrap">
           <p className="kicker">Olha ela trabalhando</p>
-          <h2 className="h-sec">Exemplo real do que a Sacada gera.</h2>
+          <h2 className="h-sec">Exemplo real do que a Desenrola gera.</h2>
           <div style={{ marginTop: '30px' }}>
             <p><strong>Ela te manda:</strong> <span className="serif-accent" style={{ fontSize: '1.1em' }}>"nossa, hoje foi um dia longo… só quero um banho quente e minha cama 😴"</span></p>
             <p className="dim">O que a maioria dos caras responde (e mata a conversa):<br /><span style={{ color: 'var(--fg-faint)', fontStyle: 'italic' }}>"descansa então! amanhã é outro dia 😊"</span> — morno, genérico, esquecível. Ela nem responde.</p>
-            <p style={{ marginTop: '30px' }}><strong>O que a Sacada te entrega:</strong></p>
+            <p style={{ marginTop: '30px' }}><strong>O que a Desenrola te entrega:</strong></p>
           </div>
           <div style={{ marginTop: '22px' }}>
             <div className="resp">
@@ -104,7 +104,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div style={{ marginTop: '30px' }}>
-            <p>Sentiu a diferença? Nenhuma delas parece robô. Todas soam como um homem que sabe o que tá fazendo. E a Sacada te mostra quais técnicas ela usou — cada conversa vira uma aula.</p>
+            <p>Sentiu a diferença? Nenhuma delas parece robô. Todas soam como um homem que sabe o que tá fazendo. E a Desenrola te mostra quais técnicas ela usou — cada conversa vira uma aula.</p>
           </div>
         </div>
       </section>
@@ -141,7 +141,7 @@ export default function LandingPage() {
       <section data-animate>
         <div className="wrap">
           <p className="kicker">Primeiros resultados</p>
-          <h2 className="h-sec">Veja o que a Sacada gera na prática:</h2>
+          <h2 className="h-sec">Veja o que a Desenrola gera na prática:</h2>
           <div className="proof-alt">
             <div className="proof-alt__grid">
               <div className="proof-alt__sample">
@@ -158,7 +158,7 @@ export default function LandingPage() {
               </div>
             </div>
             <p className="proof-alt__invite">
-              Essas respostas foram geradas pela Sacada IA. Você pode ser o próximo a usar — e nos contar como foi.
+              Essas respostas foram geradas pela Desenrola. Você pode ser o próximo a usar — e nos contar como foi.
             </p>
           </div>
         </div>
@@ -174,15 +174,15 @@ export default function LandingPage() {
           <div className="qa">
             <div>
               <p className="q">"Sou velho demais pra ficar usando appzinho de paquera."</p>
-              <p className="a">Foi exatamente pra você que isso foi feito. Os apps gringos são pra moleque de 20 anos. A Sacada foi calibrada pro homem adulto brasileiro que voltou ao jogo. A sua idade não é o problema — é o seu trunfo, quando você sabe usar.</p>
+              <p className="a">Foi exatamente pra você que isso foi feito. Os apps gringos são pra moleque de 20 anos. A Desenrola foi calibrada pro homem adulto brasileiro que voltou ao jogo. A sua idade não é o problema — é o seu trunfo, quando você sabe usar.</p>
             </div>
             <div>
               <p className="q">"Não entendo nada de tecnologia."</p>
-              <p className="a">Se você sabe mandar mensagem no WhatsApp, você sabe usar a Sacada. Cola, toca, copia. Acabou.</p>
+              <p className="a">Se você sabe mandar mensagem no WhatsApp, você sabe usar a Desenrola. Cola, toca, copia. Acabou.</p>
             </div>
             <div>
               <p className="q">"Vai parecer que não sou eu falando."</p>
-              <p className="a">Esse é o ponto inteiro. A Sacada não te dá frase de robô nem cantada pronta de internet. Ela te dá o que VOCÊ diria no seu melhor dia — destravado, no tom certo.</p>
+              <p className="a">Esse é o ponto inteiro. A Desenrola não te dá frase de robô nem cantada pronta de internet. Ela te dá o que VOCÊ diria no seu melhor dia — destravado, no tom certo.</p>
             </div>
             <div>
               <p className="q">"E se eu não gostar / não funcionar comigo?"</p>
@@ -208,7 +208,7 @@ export default function LandingPage() {
               </div>
               <div>
                 <h2 className="h-sub" style={{ marginBottom: '14px' }}>A garantia que tira todo o risco das suas costas.</h2>
-                <p style={{ fontSize: '16px' }}>Testa a Sacada por <strong>7 dias</strong>. Usa numa conversa de verdade. Manda a resposta. Vê acontecer.</p>
+                <p style={{ fontSize: '16px' }}>Testa a Desenrola por <strong>7 dias</strong>. Usa numa conversa de verdade. Manda a resposta. Vê acontecer.</p>
                 <p style={{ fontSize: '16px' }}>Se em 7 dias você achar que não valeu — por qualquer motivo, ou por nenhum — você me manda uma mensagem e eu devolvo <strong>100% do seu dinheiro</strong>. Na hora. Sem pergunta, sem cara feia.</p>
                 <p style={{ fontSize: '16px', marginBottom: '0' }}>O risco é todo meu. Você não tem nada a perder além do silêncio que tá recebendo agora.</p>
               </div>
@@ -225,19 +225,19 @@ export default function LandingPage() {
           <div className="faq">
             <details>
               <summary>É cobrança mensal?</summary>
-              <p className="fa">Não. Você paga R$47 uma vez e tem acesso vitalício. Nunca mais paga nada.</p>
+              <p className="fa">Não. Você paga R$29,90 uma vez e tem acesso vitalício. Nunca mais paga nada.</p>
             </details>
             <details>
               <summary>Preciso entender de tecnologia?</summary>
-              <p className="fa">Não. Se você usa WhatsApp, você usa a Sacada. É colar, escolher o tom e copiar a resposta.</p>
+              <p className="fa">Não. Se você usa WhatsApp, você usa a Desenrola. É colar, escolher o tom e copiar a resposta.</p>
             </details>
             <details>
               <summary>Ela vai perceber que usei uma IA?</summary>
-              <p className="fa">Não — esse é o motivo da Sacada existir. Ela foi construída especificamente pra não soar como robô. Escreve como gente de verdade, em português brasileiro real.</p>
+              <p className="fa">Não — esse é o motivo da Desenrola existir. Ela foi construída especificamente pra não soar como robô. Escreve como gente de verdade, em português brasileiro real.</p>
             </details>
             <details>
               <summary>Funciona com mulheres que eu já conheço, não só match novo?</summary>
-              <p className="fa">Funciona com qualquer conversa. Match novo, alguém que você reencontrou, aquela que esfriou. Cola a conversa e a Sacada calibra.</p>
+              <p className="fa">Funciona com qualquer conversa. Match novo, alguém que você reencontrou, aquela que esfriou. Cola a conversa e a Desenrola desenrola.</p>
             </details>
             <details>
               <summary>Em quanto tempo recebo o acesso?</summary>
@@ -253,7 +253,7 @@ export default function LandingPage() {
       <section>
         <div className="wrap ps">
           <p><b className="lbl">P.S.</b> — Se você chegou até aqui, é porque alguma parte dessa página falou com você. Provavelmente aquela cena lá no começo, da tela em branco. A pergunta é só uma: você vai continuar fechando o app frustrado, ou vai gastar menos que uma pizza pra destravar isso de uma vez?</p>
-          <p><b className="lbl">P.P.S.</b> — E lembra: o risco é todo meu. 7 dias, devolução total, sem pergunta. Se não funcionar pra você, não custa nada. Mas se funcionar — e eu construí isso justamente pra funcionar pra quem ficou anos fora — talvez essa seja a melhor nota de R$47 que você já gastou. <a href="#pitch" className="inline-cta" data-cta="">Quero voltar pro jogo →</a></p>
+          <p><b className="lbl">P.P.S.</b> — E lembra: o risco é todo meu. 7 dias, devolução total, sem pergunta. Se não funcionar pra você, não custa nada. Mas se funcionar — e eu construí isso justamente pra funcionar pra quem ficou anos fora — talvez essa seja a melhor nota de R$29,90 que você já gastou. <a href="#pitch" className="inline-cta" data-cta="">Quero voltar pro jogo →</a></p>
         </div>
       </section>
 
@@ -261,22 +261,16 @@ export default function LandingPage() {
       <section className="urgency" style={{ borderBottom: 'none' }}>
         <div className="wrap" style={{ textAlign: 'center' }}>
           <a href="#pitch" className="cta cta-full" data-cta="">Quero voltar pro jogo <span className="arw">→</span></a>
-          <p className="cta-sub">R$47 uma única vez · acesso vitalício · garantia de 7 dias</p>
+          <p className="cta-sub">R$29,90 uma única vez · acesso vitalício · garantia de 7 dias</p>
         </div>
       </section>
 
       {/* ── Footer ────────────────────────────────────────────── */}
       <footer className="foot">
         <div className="wrap">
-          <div className="brand">Sacada</div>
-          <div className="trust-badges" style={{ justifyContent: 'flex-start', marginBottom: '10px' }}>
-            <span className="trust-badge">🔒 SSL</span>
-            <span className="trust-badge">Perfect Pay</span>
-            {process.env.NEXT_PUBLIC_SUPPORT_EMAIL && (
-              <span className="trust-badge">📧 {process.env.NEXT_PUBLIC_SUPPORT_EMAIL}</span>
-            )}
-          </div>
-          <p className="fine">Inteligência de conversa · uso adulto e individual · © 2026</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Desenrola" className="footer-logo" />
+          <p className="fine">Desenrola · inteligência de conversa · uso adulto e individual · © 2026</p>
         </div>
       </footer>
 

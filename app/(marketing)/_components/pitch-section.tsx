@@ -28,7 +28,7 @@ const BONUSES = [
 ] as const;
 
 const STACK_ROWS = [
-  { label: 'Sacada IA (vitalício)',    value: 'R$197' },
+  { label: 'Desenrola (vitalício)',     value: 'R$197' },
   { label: 'Bônus 1 — Os 7 Erros',    value: 'R$47'  },
   { label: 'Bônus 2 — O Perfil',       value: 'R$67'  },
   { label: 'Bônus 3 — Do App ao Café', value: 'R$77'  },
@@ -49,7 +49,7 @@ export function PitchSection() {
 
         <div className="pitch-product">
           <p className="pitch-product__label">✦ Produto principal</p>
-          <h3 className="pitch-product__name">Sacada IA — Acesso Vitalício</h3>
+          <h3 className="pitch-product__name">Desenrola — Acesso Vitalício</h3>
           <p className="pitch-product__desc">
             3 respostas calibradas em segundos. Texto, print e áudio.
             WhatsApp, Instagram, Tinder, Bumble.
@@ -91,12 +91,12 @@ export function PitchSection() {
         <div className="price-reveal">
           <p className="price-reveal__label">Tudo isso hoje, por apenas</p>
           <p className="price-reveal__pre">↓ preço de fundador ↓</p>
-          <p className="price-reveal__number"><small>R$</small><span>47</span></p>
+          <p className="price-reveal__number"><small>R$</small><span>29,90</span></p>
           <p className="price-reveal__once">uma única vez — acesso vitalício</p>
         </div>
 
         <a {...checkoutProps} className="cta cta-full cta-block pitch-cta">
-          Quero tudo isso por R$47 <span className="arw">→</span>
+          Quero tudo isso por R$29,90 <span className="arw">→</span>
         </a>
         <p className="cta-sub">PIX ou Cartão · acesso em minutos</p>
 

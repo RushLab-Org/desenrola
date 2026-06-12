@@ -22,7 +22,7 @@ export function MobileBottomBar() {
       aria-hidden={!visible}
     >
       <span className="mobile-bottom-bar__price">
-        <strong>R$47</strong> uma vez
+        <strong>R$29,90</strong> uma vez
       </span>
       <a href="#pitch" onClick={scrollToPitch} className="cta mobile-bottom-bar__cta">
         Comprar agora <span className="arw">→</span>

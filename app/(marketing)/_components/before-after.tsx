@@ -26,11 +26,11 @@ export function BeforeAfterSection() {
           </div>
         </div>
 
-        <p className="before-after-label">A Sacada resolve isso</p>
+        <p className="before-after-label">A Desenrola desenrola isso</p>
 
         <div className="before-after-grid">
           <div className="before-after-col before-after-col--bad">
-            <p className="before-after-col__title">Sem a Sacada</p>
+            <p className="before-after-col__title">Sem a Desenrola</p>
             <div className="ba-convo">
               <div className="chat-bubble chat-bubble--her">oi, sumiu né 😏</div>
               <div className="chat-bubble chat-bubble--me-bad">é, tava ocupado kkkk</div>
@@ -44,7 +44,7 @@ export function BeforeAfterSection() {
           </div>
 
           <div className="before-after-col before-after-col--good">
-            <p className="before-after-col__title">Com a Sacada</p>
+            <p className="before-after-col__title">Com a Desenrola</p>
             <div className="ba-convo">
               <div className="chat-bubble chat-bubble--her">oi, sumiu né 😏</div>
               <div className="chat-bubble chat-bubble--me-good">sumiço intencional. queria ver quanto tempo até você notar</div>

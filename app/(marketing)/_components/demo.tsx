@@ -4,35 +4,30 @@
 import { useState } from 'react';
 import { gerarDemo, type DemoOpcao } from '../actions';
 
-// Demo interativo da landing (ADR-035 / ADR-036).
-// Liga na IA real via Server Action gerarDemo. Print/áudio mostram popup
-// "exclusivo no app". Limite de 2 gerações tratado no servidor.
-
-const LEVELS = ['leve', 'equilibrado', 'quente', 'provocante', 'explícito'] as const;
-
 const INTENTS = [
-  { label: 'responder normal', value: 'responder_normal' },
-  { label: 'esquentar', value: 'esquentar' },
-  { label: 'sair de DR', value: 'sair_de_dr' },
-  { label: 'pedir pra sair', value: 'pedir_pra_sair' },
-  { label: 'reconquistar', value: 'reconquistar' },
-  { label: 'desconversar', value: 'desconversar' },
-  { label: 'sexualizar', value: 'sexualizar' },
+  { label: 'Só responder', value: 'responder_normal', emoji: '💬' },
+  { label: 'Esquentar', value: 'esquentar', emoji: '🔥' },
+  { label: 'Marcar encontro', value: 'pedir_pra_sair', emoji: '☕' },
+  { label: 'Reconquistar', value: 'reconquistar', emoji: '🎯' },
 ] as const;
 
-type Status = 'idle' | 'loading' | 'done' | 'error';
+type IntentValue = (typeof INTENTS)[number]['value'];
+type Status = 'idle' | 'loading' | 'done' | 'limit' | 'error';
 
 export function DemoSection() {
   const [herMessage, setHerMessage] = useState('');
-  const [intensityIdx, setIntensityIdx] = useState(1);
-  const [intent, setIntent] = useState<string>('responder_normal');
-  const [context, setContext] = useState('');
+  const [intent, setIntent] = useState<IntentValue>('responder_normal');
 
   const [status, setStatus] = useState<Status>('idle');
   const [leitura, setLeitura] = useState('');
   const [opcoes, setOpcoes] = useState<DemoOpcao[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
   const [showPopup, setShowPopup] = useState(false);
+
+  function scrollToPitch(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    document.getElementById('pitch')?.scrollIntoView({ behavior: 'smooth' });
+  }
 
   async function handleGenerate() {
     if (status === 'loading') return;
@@ -46,15 +41,16 @@ export function DemoSection() {
 
     const res = await gerarDemo({
       her_message: herMessage,
-      intensity: intensityIdx + 1,
+      intensity: 3,
       intent,
-      extra_context: context,
     });
 
     if (res.ok) {
       setLeitura(res.leitura);
       setOpcoes(res.opcoes);
       setStatus('done');
+    } else if (res.reason === 'limit') {
+      setStatus('limit');
     } else {
       setErrorMsg(res.message);
       setStatus('error');
@@ -63,6 +59,7 @@ export function DemoSection() {
 
   const loading = status === 'loading';
   const showResults = status === 'done';
+  const showGate = status === 'limit';
 
   return (
     <section className="demo" id="demo">
@@ -110,67 +107,25 @@ export function DemoSection() {
             </div>
           </div>
 
-          {/* intensidade */}
+          {/* o que você quer fazer (substituiu o slider de intensidade) */}
           <div className="gen-block">
-            <div className="gen-intens-head">
-              <span className="field-label">intensidade</span>
-              <span className="gen-intens-val">{LEVELS[intensityIdx]}</span>
-            </div>
-            <input
-              type="range"
-              className="gen-range"
-              min={0}
-              max={4}
-              step={1}
-              value={intensityIdx}
-              aria-label="intensidade"
-              onChange={(e) => setIntensityIdx(Number(e.target.value))}
-            />
-            <div className="gen-scale">
-              {LEVELS.map((lvl, idx) => (
-                <span
-                  key={lvl}
-                  className={idx === intensityIdx ? 'is-on' : undefined}
-                  onClick={() => setIntensityIdx(idx)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {lvl}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* intenção */}
-          <div className="gen-block">
-            <span className="field-label">intenção</span>
+            <span className="field-label">o que você quer fazer?</span>
             <div className="gen-chips">
               {INTENTS.map((it) => (
                 <button
                   key={it.value}
                   type="button"
-                  className={intent === it.value ? 'chip is-active' : 'chip'}
+                  className={`chip${intent === it.value ? ' is-active' : ''}`}
                   onClick={() => setIntent(it.value)}
                 >
-                  {it.label}
+                  {it.emoji} {it.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* contexto extra */}
-          <div className="gen-block">
-            <span className="field-label">contexto extra (opcional)</span>
-            <textarea
-              className="gen-context"
-              placeholder="algo específico dessa situação que ajuda a calibrar..."
-              aria-label="contexto extra"
-              value={context}
-              onChange={(e) => setContext(e.target.value)}
-            />
-          </div>
-
           {/* gerar */}
-          {!showResults && (
+          {!showResults && !showGate && (
             <div className="gen-generate">
               <button
                 type="button"
@@ -214,28 +169,64 @@ export function DemoSection() {
               <div className="demo-convert">
                 <p>
                   <strong>
-                    Essas respostas que você acabou de ver? Você gerou em segundos, sem pagar nada,
-                    sem nem se cadastrar.
+                    Você acabou de ver o que a Desenrola faz. Isso que você gerou agora, em segundos?
+                    É exatamente o que você vai ter pra cada conversa — pra sempre.
                   </strong>
                 </p>
                 <p>
-                  Agora imagina ter isso pra CADA conversa. Toda vez que ela te mandar mensagem.
-                  Ilimitado. Pra sempre. Sem nunca mais travar encarando a tela.
+                  Sem limite. Sem mensalidade. Cola a mensagem dela a qualquer hora e você tem 3
+                  respostas calibradas no tom certo, prontas pra mandar.
                 </p>
                 <p>
-                  É exatamente isso que você leva por{' '}
+                  Tudo isso por{' '}
                   <span className="brasa-text">
-                    <strong>R$47</strong>
+                    <strong>R$29,90</strong>
                   </span>{' '}
                   — uma vez, e seu pra sempre.
                 </p>
-                <a href="#pitch" onClick={(e) => { e.preventDefault(); document.getElementById('pitch')?.scrollIntoView({ behavior: 'smooth' }); }} className="cta cta-full cta-block">
+                <a
+                  href="#pitch"
+                  onClick={scrollToPitch}
+                  className="cta cta-full cta-block"
+                >
                   Quero isso ilimitado <span className="arw">→</span>
                 </a>
                 <p className="demo-note">
-                  limite de 2 testes grátis por pessoa — pra gerar quantas quiser, é só entrar
+                  limite de testes grátis por pessoa — pra gerar quantas quiser, é só entrar
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* gate de compra — limite atingido */}
+          {showGate && (
+            <div className="demo-convert" style={{ marginTop: '0' }}>
+              <p>
+                <strong>
+                  Você já viu o que a Desenrola faz. Viu as respostas aparecerem. Sentiu a diferença.
+                </strong>
+              </p>
+              <p>
+                Agora imagina ter isso pra cada conversa que ela te mandar. Todo dia. A qualquer
+                hora. Sem nunca mais travar encarando a tela.
+              </p>
+              <p>
+                É exatamente isso que você leva por{' '}
+                <span className="brasa-text">
+                  <strong>R$29,90</strong>
+                </span>{' '}
+                — uma única vez. Sem mensalidade. Acesso vitalício.
+              </p>
+              <a
+                href="#pitch"
+                onClick={scrollToPitch}
+                className="cta cta-full cta-block"
+              >
+                Quero o acesso completo <span className="arw">→</span>
+              </a>
+              <p className="demo-note">
+                acesso imediato após o pagamento · garantia incondicional de 7 dias
+              </p>
             </div>
           )}
         </div>
@@ -279,7 +270,16 @@ export function DemoSection() {
               No teste grátis você cola o texto — lá dentro, você joga o print ou o áudio e a IA lê
               tudo.
             </p>
-            <a href="#pitch" onClick={(e) => { e.preventDefault(); document.getElementById('pitch')?.scrollIntoView({ behavior: 'smooth' }); }} className="cta cta-full cta-block" style={{ marginBottom: '12px' }}>
+            <a
+              href="#pitch"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowPopup(false);
+                document.getElementById('pitch')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="cta cta-full cta-block"
+              style={{ marginBottom: '12px' }}
+            >
               Quero o acesso completo <span className="arw">→</span>
             </a>
             <button
