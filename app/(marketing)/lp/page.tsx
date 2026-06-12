@@ -1,97 +1,57 @@
-/* eslint-disable react/no-unescaped-entities -- copy de marketing tem muitas aspas literais; escapar deixaria o texto ilegível pra edição */
+/* eslint-disable react/no-unescaped-entities -- copy de marketing tem muitas aspas literais */
+import { StickyNav } from '../_components/sticky-nav';
+import { HeroDemoMini } from '../_components/hero-demo-mini';
+import { BeforeAfterSection } from '../_components/before-after';
 import { DemoSection } from '../_components/demo';
+import { ComparisonTable } from '../_components/comparison-table';
+import { AnimatedCounters } from '../_components/animated-counters';
+import { AnimationObserver } from '../_components/animation-observer';
+import { PitchSection } from '../_components/pitch-section';
+import { MobileBottomBar } from '../_components/mobile-bottom-bar';
 
-// Landing page "Onyx & Brasa" — portada de Sacada-Landing-PV2.html (ADR-035).
-// Server Component: todo o conteúdo estático renderiza no servidor (SEO).
-// A seção interativa "Testa agora" vive em <DemoSection /> (client component).
 export default function LandingPage() {
   return (
     <>
-      <div className="hero-brand-fixed"></div>
+      <AnimationObserver />
+      <StickyNav />
 
-
+      {/* ── 1. Hero ────────────────────────────────────────────── */}
       <header className="hero">
         <span className="brand">Sacada</span>
         <div className="wrap">
           <p className="prehead">Pra todo homem que voltou a ficar solteiro depois dos 35 — e descobriu que o jogo mudou.</p>
-          <h1 className="h-hero">Você ficou fora do mercado por anos. O problema não é isso. O problema é que ninguém te avisou que as regras mudaram completamente.</h1>
-          <p className="sub">E enquanto você trava tentando lembrar como se conversa com uma mulher que você acabou de conhecer, caras com metade da sua bagagem estão marcando encontro com ela. Tem uma forma de virar esse jogo. Sem curso de sedução, sem fingir ser quem você não é, sem pagar mico.</p>
-          <a href="#checkout" className="cta" data-cta="">Quero virar o jogo <span className="arw">→</span></a>
+          <h1 className="h-hero">Ela mandou mensagem. E você travou de novo.</h1>
+          <p className="sub">Cola o que ela escreveu. Em 10 segundos você tem 3 respostas — no seu tom, sem parecer robô.</p>
+          <HeroDemoMini />
+          <a href="#pitch" className="cta" data-cta="" style={{ marginTop: '24px' }}>Ver a oferta completa <span className="arw">→</span></a>
+          <p className="cta-sub">Sem mensalidade · acesso imediato · garantia 7 dias</p>
         </div>
       </header>
 
       <div className="divider"></div>
 
-
-      <section className="lead">
-        <div className="wrap">
-          <p>Deixa eu adivinhar como foi.</p>
-          <p>Você baixou o aplicativo de novo. Depois de anos. Talvez tenha sido um amigo que insistiu, talvez tenha sido uma noite de sexta sozinho em casa que pesou mais que as outras.</p>
-          <p>Criou o perfil meio sem jeito. Colocou três fotos. Começou a deslizar.</p>
-          <p>E aconteceu: deu match.</p>
-          <p>Aí veio o frio na barriga que você não sentia há uns dez anos. Abriu a conversa dela. Leu. Releu. Começou a digitar… apagou. Digitou de novo… apagou de novo.</p>
-          <p>Ficou ali. Encarando a tela. Sem saber o que mandar pra não parecer babaca, careta, ou desesperado.</p>
-          <p>E quando finalmente mandou alguma coisa — provavelmente um "oi, tudo bem?" ou um elogio meio sem graça — ela respondeu seco. Ou simplesmente não respondeu.</p>
-          <p>Você fechou o app. Falou pra si mesmo que "não tá afim disso agora". Mentira. Você tá. Só não sabe mais como jogar.</p>
-          <p className="pull">E aqui vai a verdade que ninguém te conta: <span className="serif-accent">não é a sua idade. Não é a sua aparência.</span> É que você está jogando um jogo de 2026 com um manual de 2010.</p>
-        </div>
-      </section>
+      {/* ── 2. Dores + Antes/Depois ────────────────────────────── */}
+      <BeforeAfterSection />
 
       <div className="divider"></div>
 
-
-      <section>
-        <div className="wrap">
-          <p className="kicker">O terreno mudou</p>
-          <h2 className="h-sec">Enquanto você estava construindo uma vida, o terreno inteiro mudou debaixo dos seus pés.</h2>
-          <div style={{ marginTop: '30px' }}>
-            <p>Quando você saiu do mercado, paquera era olho no olho. Puxar assunto no bar, pedir o número, ligar (ligar!) e marcar.</p>
-            <p>Agora é tudo numa caixa de texto. Três linhas no WhatsApp decidem se você é alguém que ela quer conhecer — ou só mais um. E se saírem erradas, formais demais ou óbvias demais, ela já te descartou antes da segunda mensagem.</p>
-            <p>O pior é que você nem vê o erro. Só vê o "visualizado". E o silêncio.</p>
-            <p>Você, que segura uma reunião e aguenta pressão que moleque de 25 não suportaria. Travado por uma caixa de texto. Não porque você é fraco — mas porque essa é a única coisa que enferrujou enquanto você estava ocupado sendo responsável.</p>
-            <p>E cada semana que passa, a ideia que te apavora pesa mais um pouco: a de que a sua época já passou.</p>
-            <p className="pull"><span className="serif-accent">Não passou.</span> Você só está sem tradução.</p>
-          </div>
-        </div>
-      </section>
-
-      <div className="divider"></div>
-
-
-      <section>
-        <div className="wrap">
-          <p className="kicker">A virada</p>
-          <h2 className="h-sec">Para de se culpar. Isso não é sobre ser galã. É sobre saber o que dizer.</h2>
-          <div style={{ marginTop: '30px' }}>
-            <p>Esquece tudo que te venderam sobre "ser alfa", "ter pegada natural", "nascer com lábia". Isso é conversa de quem quer te vender curso de R$3 mil.</p>
-            <p>A real é mais simples e mais brutal: <strong>conversa é uma habilidade. E toda habilidade enferruja quando você fica anos sem usar.</strong></p>
-            <p>Você não esqueceu de ser interessante. Você não ficou chato. Você só perdeu a prática de transformar o que você PENSA em algo que soa bem numa tela — rápido, no tom certo, sem parecer que você tá tentando demais.</p>
-            <p>Um cara de 25 não é melhor que você nisso. Ele só treinou mais recentemente. Mais nada.</p>
-            <p>E adivinha? Prática é a única coisa do mundo que dá pra acelerar com a ferramenta certa.</p>
-          </div>
-        </div>
-      </section>
-
-
-      <section className="mech">
+      {/* ── 3. O Mecanismo ─────────────────────────────────────── */}
+      <section className="mech" data-animate>
         <div className="wrap">
           <p className="kicker">O mecanismo</p>
-          <h2 className="h-sec">Apresento a Sacada IA: a inteligência que te dá as palavras certas, na hora certa, do jeito que <span className="serif-accent">você</span> falaria — se não estivesse travado.</h2>
-          <div style={{ marginTop: '30px' }}>
+          <h2 className="h-sec">A IA que escreve como você — não como robô.</h2>
+          <div style={{ marginTop: '24px' }}>
             <p>Não é ChatGPT. Não é curso. Não é coach te mandando "ser mais confiante".</p>
-            <p>É uma IA treinada pra fazer uma coisa só, e fazer bem: você cola a mensagem que ela te mandou, e em segundos recebe <strong>3 respostas calibradas</strong> — no tom certo, na temperatura certa, prontas pra mandar.</p>
-            <p>E aqui tá o pulo do gato, o motivo de isso funcionar quando ChatGPT te deixa na mão:</p>
+            <p>É uma IA construída pra fazer uma coisa só, e fazer bem: você cola a mensagem que ela te mandou, e em segundos recebe <strong>3 respostas calibradas</strong> — no tom certo, prontas pra mandar.</p>
             <p className="pull"><span className="serif-accent">A Sacada foi construída pra não parecer IA.</span></p>
-            <p>Sabe quando você usa o ChatGPT pra responder e sai aquela coisa certinha, educada, com ponto final em tudo, que grita "isso foi escrito por robô"? Ela percebe. Toda mulher percebe. E aí já era.</p>
-            <p>A Sacada não faz isso. Ela escreve como brasileiro escreve de verdade — com a gíria na medida, a vírgula onde a fala respira, a malandragem certa. Ela espelha o tom dela. E o mais importante pra você: ela calibra pro SEU momento. Você diz que voltou ao mercado depois de anos, e ela ajusta tudo — pra você soar como um homem maduro e confiante, não como um moleque nem como um tiozão perdido.</p>
+            <p>Escreve como brasileiro de verdade — com a gíria na medida, a vírgula onde a fala respira, a malandragem certa. E calibra pro SEU momento: você voltou ao mercado depois de anos, ela ajusta tudo pra você soar como um homem maduro e confiante.</p>
             <div className="method-badge">★ Método Resposta Certa</div>
-            <p style={{ marginTop: '22px' }}>A mensagem certa, no tom certo, na hora exata em que você normalmente travaria. Não é sorte, não é dom. É o que a Sacada faz toda vez que você cola uma conversa.</p>
           </div>
         </div>
       </section>
 
-
-      <section>
+      {/* ── 4. Como funciona ───────────────────────────────────── */}
+      <section data-animate>
         <div className="wrap-w">
           <div className="wrap" style={{ paddingLeft: '0', paddingRight: '0' }}>
             <p className="kicker">Como funciona</p>
@@ -114,16 +74,13 @@ export default function LandingPage() {
               <p>Calibradas, no seu tom, prontas pra copiar e mandar. Escolhe a que mais te representa. Em 10 segundos.</p>
             </div>
           </div>
-          <div className="wrap" style={{ paddingLeft: '0', paddingRight: '0', marginTop: '34px' }}>
-            <p>Acabou o "encarar a tela em branco". Acabou o "mandar e se arrepender". Acabou o vácuo por não saber o que dizer.</p>
-          </div>
         </div>
       </section>
 
       <div className="divider"></div>
 
-
-      <section>
+      {/* ── 5. Olha ela trabalhando ────────────────────────────── */}
+      <section data-animate>
         <div className="wrap">
           <p className="kicker">Olha ela trabalhando</p>
           <h2 className="h-sec">Exemplo real do que a Sacada gera.</h2>
@@ -132,7 +89,6 @@ export default function LandingPage() {
             <p className="dim">O que a maioria dos caras responde (e mata a conversa):<br /><span style={{ color: 'var(--fg-faint)', fontStyle: 'italic' }}>"descansa então! amanhã é outro dia 😊"</span> — morno, genérico, esquecível. Ela nem responde.</p>
             <p style={{ marginTop: '30px' }}><strong>O que a Sacada te entrega:</strong></p>
           </div>
-
           <div style={{ marginTop: '22px' }}>
             <div className="resp">
               <span className="tone">Opção 1 · leve</span>
@@ -147,20 +103,26 @@ export default function LandingPage() {
               <p className="msg">"guarda essa energia de sexta. semana que vem esse dia longo termina com uma taça de vinho e uma companhia bem melhor que o chuveiro."</p>
             </div>
           </div>
-
           <div style={{ marginTop: '30px' }}>
-            <p>Sentiu a diferença? Nenhuma delas parece robô. Nenhuma delas é o "oi sumida" de sempre. Todas soam como um homem que sabe o que tá fazendo.</p>
-            <p>E ainda tem mais: a Sacada te mostra QUAIS técnicas ela usou em cada resposta. Você não só manda a mensagem — você aprende. Cada conversa vira uma aula. Em algumas semanas, você nem vai precisar tanto dela. Vai ter destravado de novo.</p>
+            <p>Sentiu a diferença? Nenhuma delas parece robô. Todas soam como um homem que sabe o que tá fazendo. E a Sacada te mostra quais técnicas ela usou — cada conversa vira uma aula.</p>
           </div>
         </div>
       </section>
 
+      {/* ── 6. Demo completo ───────────────────────────────────── */}
       <DemoSection />
 
-      <section>
+      {/* ── 7. Tabela de comparação ────────────────────────────── */}
+      <ComparisonTable />
+
+      <div className="divider"></div>
+
+      {/* ── 8. O que muda + counters animados ─────────────────── */}
+      <section data-animate>
         <div className="wrap">
           <p className="kicker">O que muda</p>
           <h2 className="h-sec">O que muda na sua vida a partir de hoje:</h2>
+          <AnimatedCounters />
           <ul className="checks">
             <li><span className="ck">✓</span><span>Você abre a conversa dela e sabe exatamente o que mandar — sem travar, sem reler dez vezes</span></li>
             <li><span className="ck">✓</span><span>Você para de matar conversa boa por mandar a resposta morna na hora errada</span></li>
@@ -169,13 +131,43 @@ export default function LandingPage() {
             <li><span className="ck">✓</span><span>Você para de depender de pedir conselho pro amigo mais novo (que também não sabe direito)</span></li>
             <li><span className="ck">✓</span><span>Você transforma a maturidade que tem numa vantagem, em vez de carregar como peso</span></li>
           </ul>
+          <a href="#pitch" className="cta cta-full cta-block" style={{ marginTop: '28px' }} data-cta="">Ver a oferta <span className="arw">→</span></a>
         </div>
       </section>
 
       <div className="divider"></div>
 
+      {/* ── 9. Prova social alternativa ────────────────────────── */}
+      <section data-animate>
+        <div className="wrap">
+          <p className="kicker">Primeiros resultados</p>
+          <h2 className="h-sec">Veja o que a Sacada gera na prática:</h2>
+          <div className="proof-alt">
+            <div className="proof-alt__grid">
+              <div className="proof-alt__sample">
+                <span className="tone">tom · leve e confiante</span>
+                <p className="msg">"sumiço intencional. queria ver quanto tempo até você notar."</p>
+              </div>
+              <div className="proof-alt__sample">
+                <span className="tone">tom · provocante</span>
+                <p className="msg">"tive uma ideia pra você. mas só conto pessoalmente."</p>
+              </div>
+              <div className="proof-alt__sample">
+                <span className="tone">tom · puxando pra frente</span>
+                <p className="msg">"guarda essa energia de sexta. semana que vem esse dia longo termina com uma taça de vinho e uma companhia bem melhor que o chuveiro."</p>
+              </div>
+            </div>
+            <p className="proof-alt__invite">
+              Essas respostas foram geradas pela Sacada IA. Você pode ser o próximo a usar — e nos contar como foi.
+            </p>
+          </div>
+        </div>
+      </section>
 
-      <section>
+      <div className="divider"></div>
+
+      {/* ── 10. Antes de você perguntar ────────────────────────── */}
+      <section data-animate>
         <div className="wrap">
           <p className="kicker">Antes de você perguntar</p>
           <h2 className="h-sec">Deixa eu adivinhar o que tá passando na sua cabeça:</h2>
@@ -190,92 +182,23 @@ export default function LandingPage() {
             </div>
             <div>
               <p className="q">"Vai parecer que não sou eu falando."</p>
-              <p className="a">Esse é o ponto inteiro. A Sacada não te dá frase de robô nem cantada pronta de internet. Ela te dá o que VOCÊ diria no seu melhor dia — destravado, no tom certo. As respostas soam como você, porque são calibradas pra soar.</p>
+              <p className="a">Esse é o ponto inteiro. A Sacada não te dá frase de robô nem cantada pronta de internet. Ela te dá o que VOCÊ diria no seu melhor dia — destravado, no tom certo.</p>
             </div>
             <div>
               <p className="q">"E se eu não gostar / não funcionar comigo?"</p>
-              <p className="a">Você tem 7 dias pra testar numa conversa real. Não gostou? Devolvo cada centavo. Sem pergunta, sem burocracia, sem "me explica o motivo". (Mais sobre isso já já.)</p>
+              <p className="a">Você tem 7 dias pra testar numa conversa real. Não gostou? Devolvo cada centavo. Sem pergunta, sem burocracia.</p>
             </div>
-          </div>
-        </div>
-      </section>
-
-
-
-      <section>
-        <div className="wrap">
-          <p className="kicker">Quem já voltou pro jogo</p>
-          <div className="proof-ph" data-proof-social="">
-            <div className="pl">Espaço reservado · prova social</div>
-            <div className="pt">depoimentos e prints dos primeiros usuários entram aqui</div>
           </div>
         </div>
       </section>
 
       <div className="divider"></div>
 
+      {/* ── 11. Pitch — destino de todos os CTAs ──────────────── */}
+      <PitchSection />
 
-      <section>
-        <div className="wrap">
-          <p className="kicker">A oferta</p>
-          <h2 className="h-sec">O que você leva hoje:</h2>
-          <ul className="offer-list">
-            <li><span className="ck">✓</span><span className="ot"><b>Acesso VITALÍCIO à Sacada IA</b> — paga uma vez, é seu pra sempre. Sem mensalidade, sem renovação, sem pegadinha.</span></li>
-            <li><span className="ck">✓</span><span className="ot"><b>Respostas ilimitadas, calibradas pro seu perfil</b> — quantas conversas você quiser, quantas vezes precisar.</span></li>
-            <li><span className="ck">✓</span><span className="ot"><b>As 12 técnicas de conversa que viram aula</b> — você aprende enquanto usa.</span></li>
-            <li><span className="ck">✓</span><span className="ot"><b>Funciona em qualquer lugar</b> — WhatsApp, Instagram, Tinder, Bumble. Cola de qualquer conversa.</span></li>
-            <li><span className="ck">✓</span><span className="ot"><b>Entende texto, print e áudio</b> — cola a conversa do jeito que ela vier.</span></li>
-          </ul>
-
-          <div className="bonus">
-            <p className="gift-kicker">🎁 E mais um presente pra você entrar hoje</p>
-            <h3>Bônus: "Os 7 Erros Que Fazem Ela Sumir Depois do Primeiro 'Oi'"</h3>
-            <p style={{ margin: '0', color: 'var(--fg-2)', fontSize: '16px' }}>Um guia direto ao ponto com os 7 erros que quase todo homem que voltou ao mercado comete sem perceber — e que fazem a conversa morrer antes mesmo de começar. Não é teoria de coach. São os deslizes reais que transformam um match promissor em mais um "visualizado".</p>
-            <p style={{ margin: '18px 0 0', color: 'var(--fg)', fontSize: '15px', fontWeight: '500' }}>Você vai descobrir, entre outros:</p>
-            <ul className="blist">
-              <li><span className="d">—</span><span>O "oi, tudo bem?" e por que ele te coloca na pilha dos esquecíveis na primeira linha</span></li>
-              <li><span className="d">—</span><span>O elogio que parece gentil mas grita carência (quase todo mundo manda)</span></li>
-              <li><span className="d">—</span><span>O erro de timing que faz você parecer desesperado mesmo dizendo a coisa certa</span></li>
-              <li><span className="d">—</span><span>O que NUNCA mandar nas primeiras 3 mensagens — e o que mandar no lugar</span></li>
-            </ul>
-            <p style={{ margin: '20px 0 0', color: 'var(--fg-2)', fontSize: '15px' }}>Leitura de 10 minutos que pode salvar as próximas 10 conversas. <strong>Seu de graça junto com o acesso.</strong></p>
-          </div>
-        </div>
-      </section>
-
-
-      <section>
-        <div className="wrap">
-          <p className="kicker">Quanto isso vale</p>
-          <h2 className="h-sec">Vamos falar de quanto isso vale.</h2>
-          <div style={{ marginTop: '30px' }}>
-            <p>Um curso de sedução presencial no Brasil custa de R$2.000 a R$3.000. Um fim de semana ouvindo um coach falar, e você volta pra casa com uma apostila e nenhuma conversa real resolvida.</p>
-            <p>Os aplicativos gringos que fazem parecido com isso cobram toda santa semana. Em um ano, você paga mais de R$500 — e no dia que parar de pagar, perde tudo.</p>
-            <p>A Sacada não é nem curso nem assinatura. É uma ferramenta que cabe no seu bolso, no seu tempo, no seu celular — e resolve a conversa de verdade, na hora que você precisa.</p>
-          </div>
-        </div>
-      </section>
-
-
-      <section>
-        <div className="wrap">
-          <div className="price-wrap">
-            <p className="kicker" style={{ marginBottom: '14px' }}>Hoje, o acesso vitalício sai por</p>
-            <div className="price-old">R$197</div>
-            <span className="price-now"><small>R$</small>47</span>
-            <p className="price-once">uma única vez.</p>
-          </div>
-          <div style={{ marginTop: '34px' }}>
-            <p>Não é por mês. Não é por semana. É uma vez, e é seu pra sempre.</p>
-            <p>Menos que uma pizza com a galera num sábado. Pra destravar a parte da sua vida que você anda fingindo que não importa.</p>
-            <p>E por que tão barato? Porque a Sacada acabou de ser lançada. Esse é o preço de fundador — pra quem entra agora, antes de todo mundo. Quando esse lote acabar, o preço sobe e não volta.</p>
-          </div>
-          <a href="#checkout" className="cta cta-full cta-block" data-cta="" style={{ marginTop: '14px' }}>Quero o preço de fundador <span className="arw">→</span></a>
-        </div>
-      </section>
-
-
-      <section>
+      {/* ── 12. Garantia 7 dias ────────────────────────────────── */}
+      <section data-animate>
         <div className="wrap">
           <div className="guarantee">
             <div className="guarantee-inner">
@@ -286,7 +209,7 @@ export default function LandingPage() {
               <div>
                 <h2 className="h-sub" style={{ marginBottom: '14px' }}>A garantia que tira todo o risco das suas costas.</h2>
                 <p style={{ fontSize: '16px' }}>Testa a Sacada por <strong>7 dias</strong>. Usa numa conversa de verdade. Manda a resposta. Vê acontecer.</p>
-                <p style={{ fontSize: '16px' }}>Se em 7 dias você achar que não valeu — por qualquer motivo, ou por nenhum — você me manda uma mensagem e eu devolvo <strong>100% do seu dinheiro</strong>. Na hora. Sem pergunta, sem cara feia, sem "deixa eu te oferecer um desconto".</p>
+                <p style={{ fontSize: '16px' }}>Se em 7 dias você achar que não valeu — por qualquer motivo, ou por nenhum — você me manda uma mensagem e eu devolvo <strong>100% do seu dinheiro</strong>. Na hora. Sem pergunta, sem cara feia.</p>
                 <p style={{ fontSize: '16px', marginBottom: '0' }}>O risco é todo meu. Você não tem nada a perder além do silêncio que tá recebendo agora.</p>
               </div>
             </div>
@@ -294,22 +217,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-
-      <section className="urgency">
-        <div className="wrap">
-          <p className="kicker" style={{ display: 'inline-block' }}>A janela tá aberta. Por enquanto.</p>
-          <h2 className="h-sec">Cada dia que você espera é mais uma conversa que morre.</h2>
-          <div style={{ marginTop: '24px' }}>
-            <p>Mais um match que esfria. Mais uma noite fechando o app frustrado.</p>
-            <p>Você já perdeu tempo demais travado. Hoje isso acaba.</p>
-          </div>
-          <a href="#checkout" className="cta cta-full cta-block" data-cta="" style={{ marginTop: '18px' }}>Quero voltar pro jogo <span className="arw">→</span></a>
-          <p className="cta-sub">Acesso imediato. Pagamento via PIX ou cartão. Garantia de 7 dias.</p>
-        </div>
-      </section>
-
-
-      <section>
+      {/* ── 13. FAQ expandido ──────────────────────────────────── */}
+      <section data-animate>
         <div className="wrap">
           <p className="kicker">Perguntas frequentes</p>
           <h2 className="h-sec">Perguntas que todo mundo faz antes de entrar:</h2>
@@ -340,28 +249,39 @@ export default function LandingPage() {
 
       <div className="divider"></div>
 
-
+      {/* ── 14. P.S. / P.P.S. ─────────────────────────────────── */}
       <section>
         <div className="wrap ps">
-          <p><b className="lbl">P.S.</b> — Se você chegou até aqui, é porque alguma parte dessa página falou com você. Provavelmente aquela cena lá no começo, da tela em branco. Você conhece esse silêncio. A pergunta é só uma: você vai continuar fechando o app frustrado, ou vai gastar menos que uma pizza pra destravar isso de uma vez? A janela do preço de fundador não fica aberta pra sempre.</p>
-          <p><b className="lbl">P.P.S.</b> — E lembra: o risco é todo meu. 7 dias, devolução total, sem pergunta. Se não funcionar pra você, não custa nada. Mas se funcionar — e eu construí isso justamente pra funcionar pra quem ficou anos fora — talvez essa seja a melhor nota de R$47 que você já gastou. <a href="#checkout" className="inline-cta" data-cta="">Quero voltar pro jogo →</a></p>
+          <p><b className="lbl">P.S.</b> — Se você chegou até aqui, é porque alguma parte dessa página falou com você. Provavelmente aquela cena lá no começo, da tela em branco. A pergunta é só uma: você vai continuar fechando o app frustrado, ou vai gastar menos que uma pizza pra destravar isso de uma vez?</p>
+          <p><b className="lbl">P.P.S.</b> — E lembra: o risco é todo meu. 7 dias, devolução total, sem pergunta. Se não funcionar pra você, não custa nada. Mas se funcionar — e eu construí isso justamente pra funcionar pra quem ficou anos fora — talvez essa seja a melhor nota de R$47 que você já gastou. <a href="#pitch" className="inline-cta" data-cta="">Quero voltar pro jogo →</a></p>
         </div>
       </section>
 
-
+      {/* ── 15. CTA final ─────────────────────────────────────── */}
       <section className="urgency" style={{ borderBottom: 'none' }}>
         <div className="wrap" style={{ textAlign: 'center' }}>
-          <a href="#checkout" className="cta cta-full" data-cta="">Quero voltar pro jogo <span className="arw">→</span></a>
+          <a href="#pitch" className="cta cta-full" data-cta="">Quero voltar pro jogo <span className="arw">→</span></a>
           <p className="cta-sub">R$47 uma única vez · acesso vitalício · garantia de 7 dias</p>
         </div>
       </section>
 
+      {/* ── Footer ────────────────────────────────────────────── */}
       <footer className="foot">
         <div className="wrap">
           <div className="brand">Sacada</div>
+          <div className="trust-badges" style={{ justifyContent: 'flex-start', marginBottom: '10px' }}>
+            <span className="trust-badge">🔒 SSL</span>
+            <span className="trust-badge">Perfect Pay</span>
+            {process.env.NEXT_PUBLIC_SUPPORT_EMAIL && (
+              <span className="trust-badge">📧 {process.env.NEXT_PUBLIC_SUPPORT_EMAIL}</span>
+            )}
+          </div>
           <p className="fine">Inteligência de conversa · uso adulto e individual · © 2026</p>
         </div>
       </footer>
+
+      {/* ── Mobile bottom bar (fixed) ─────────────────────────── */}
+      <MobileBottomBar />
     </>
   );
 }
