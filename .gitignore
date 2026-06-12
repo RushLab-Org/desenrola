@@ -32,7 +32,13 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (nunca commitar — tudo no Doppler)
-.env*
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+# .env.example é commitado intencionalmente (sem valores reais)
 credentials.json
 token.json
 
@@ -56,3 +62,6 @@ image*.png
 Sacada-Landing-PV2.html
 
 .vercel
+
+# Visual companion (brainstorming sessions)
+.superpowers/
