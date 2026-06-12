@@ -229,7 +229,7 @@ export function DemoSection() {
                   </span>{' '}
                   — uma vez, e seu pra sempre.
                 </p>
-                <a href="#checkout" className="cta cta-full cta-block">
+                <a href="#pitch" onClick={(e) => { e.preventDefault(); document.getElementById('pitch')?.scrollIntoView({ behavior: 'smooth' }); }} className="cta cta-full cta-block">
                   Quero isso ilimitado <span className="arw">→</span>
                 </a>
                 <p className="demo-note">
@@ -279,7 +279,7 @@ export function DemoSection() {
               No teste grátis você cola o texto — lá dentro, você joga o print ou o áudio e a IA lê
               tudo.
             </p>
-            <a href="#checkout" className="cta cta-full cta-block" style={{ marginBottom: '12px' }}>
+            <a href="#pitch" onClick={(e) => { e.preventDefault(); document.getElementById('pitch')?.scrollIntoView({ behavior: 'smooth' }); }} className="cta cta-full cta-block" style={{ marginBottom: '12px' }}>
               Quero o acesso completo <span className="arw">→</span>
             </a>
             <button
