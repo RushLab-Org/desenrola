@@ -51,7 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-6">
             <Link href="/" className="font-serif text-xl font-semibold">
-              Sacada
+              Desenrola
             </Link>
             <nav className="flex items-center gap-4 text-sm">
               <Link

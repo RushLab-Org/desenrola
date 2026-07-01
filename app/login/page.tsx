@@ -72,7 +72,7 @@ export default function LoginPage() {
             className="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-44 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(160,24,42,0.5)_0%,rgba(160,24,42,0)_70%)] blur-2xl"
           />
           <h1 className="font-serif text-[3.3rem] leading-none font-medium tracking-tight">
-            Sacada
+            Desenrola
           </h1>
           <p className="text-primary mt-3 text-[11px] font-medium tracking-[0.25em] uppercase">
             inteligência de conversa
